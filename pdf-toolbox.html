@@ -1,0 +1,2816 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF ツールボックス</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --accent: #4f6ef7;
+        --accent-hover: #3d5ce8;
+        --accent-border: #c5caff;
+        --accent-light: #a5b4fd;
+        --ink: #1c2033;
+        --ink-soft: #5a5f7a;
+        --muted: #8b90a7;
+        --line: #e8eaf2;
+        --bg: #f7f8fc;
+        --surface-2: #f2f3fa;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      .hd {
+        height: 56px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 28px;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      .hd-logo {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .hd-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 15px;
+      }
+      .hd-spacer {
+        flex: 1;
+      }
+      .hd-stat {
+        font-size: 12px;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--muted);
+        background: var(--surface-2);
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+      .src-legend {
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 8px 28px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .src-legend.visible {
+        display: flex;
+      }
+      .src-legend-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-right: 4px;
+      }
+      .src-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: inline-block;
+      }
+      .tb {
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 8px 28px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        min-height: 48px;
+      }
+      .tb-sep {
+        width: 1px;
+        height: 26px;
+        background: var(--line);
+        margin: 0 4px;
+      }
+      .tb-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .sel-chip {
+        background: #eef2ff;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-family: "JetBrains Mono", monospace;
+        border: 1px solid #c7d2fe;
+      }
+      .range-bar {
+        background: #f0f2ff;
+        border-top: 1px solid #dce0ff;
+        padding: 8px 28px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--accent);
+      }
+      .range-bar.visible {
+        display: flex;
+      }
+      .range-bar input[type="number"] {
+        width: 60px;
+        padding: 4px 8px;
+        border: 1px solid var(--accent-border);
+        border-radius: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: var(--ink);
+        background: #fff;
+        outline: none;
+      }
+      .range-bar input:focus {
+        border-color: var(--accent);
+      }
+      .range-note {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .range-spacer {
+        flex: 1;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.15s;
+        white-space: nowrap;
+        line-height: 1;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(79, 110, 247, 0.28);
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+      .btn-ghost {
+        background: var(--surface-2);
+        color: #4a4f6a;
+        border: 1px solid var(--line);
+      }
+      .btn-ghost:hover {
+        background: var(--line);
+      }
+      .btn-danger {
+        background: #fff2f2;
+        color: #e03535;
+        border: 1px solid #ffd8d8;
+      }
+      .btn-danger:hover {
+        background: #ffe5e5;
+      }
+      .btn-outline {
+        background: #fff;
+        color: var(--accent);
+        border: 1.5px solid var(--accent-border);
+      }
+      .btn-outline:hover {
+        background: #f0f2ff;
+      }
+      .main {
+        padding: 24px 28px;
+      }
+      .dropzone {
+        border: 2px dashed var(--accent-border);
+        border-radius: 16px;
+        padding: 64px 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+      }
+      .dropzone:hover,
+      .dropzone.over {
+        border-color: var(--accent);
+        background: #f5f7ff;
+      }
+      .dropzone-icon {
+        font-size: 44px;
+        margin-bottom: 14px;
+        display: block;
+      }
+      .dropzone-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .dropzone-sub {
+        font-size: 13px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .grid-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        align-items: flex-start;
+      }
+      .gap-zone {
+        width: 14px;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        min-height: 210px;
+      }
+      .gap-zone-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .gap-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 2px;
+        background: var(--accent);
+        border-radius: 2px;
+        opacity: 0;
+        transition: opacity 0.15s;
+        transform: translateX(-50%);
+      }
+      .gap-btn {
+        position: relative;
+        z-index: 2;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+        opacity: 0;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        transform: scale(0.6);
+        box-shadow: 0 2px 8px rgba(79, 110, 247, 0.4);
+      }
+      .gap-zone:hover .gap-line {
+        opacity: 1;
+        transform: translateX(-50%);
+      }
+      .gap-zone:hover .gap-btn {
+        opacity: 1;
+        transform: scale(1);
+      }
+      .card-wrap {
+        flex: 0 0 148px;
+      }
+      .card {
+        background: #fff;
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition:
+          border-color 0.18s,
+          box-shadow 0.18s,
+          transform 0.18s;
+        position: relative;
+        user-select: none;
+        width: 100%;
+      }
+      .card:hover {
+        border-color: var(--accent-light);
+        box-shadow: 0 4px 16px rgba(79, 110, 247, 0.1);
+        transform: translateY(-2px);
+      }
+      .card.sel {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px var(--accent),
+          0 4px 16px rgba(79, 110, 247, 0.15);
+      }
+      .card.dragging {
+        opacity: 0.25;
+        transform: scale(0.97);
+      }
+      .card.dtarget {
+        border-color: var(--accent);
+        border-style: dashed;
+        background: #f5f7ff;
+      }
+      .card.blank-card {
+        border-style: dashed;
+        border-color: var(--accent-border);
+      }
+      .card-thumb {
+        width: 100%;
+        height: 190px;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+      .card-thumb canvas {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+      .blank-ph {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .blank-ph-icon {
+        font-size: 28px;
+        color: var(--accent-border);
+      }
+      .blank-ph-label {
+        font-size: 10px;
+        color: var(--accent-light);
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+      .card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(10, 14, 40, 0.04) 0%,
+          rgba(10, 14, 40, 0.26) 58%,
+          rgba(10, 14, 40, 0.46) 100%
+        );
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 10px;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.18s;
+        pointer-events: none;
+      }
+      .card:hover .card-overlay {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .ov-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        line-height: 1;
+        transition: all 0.13s;
+        backdrop-filter: blur(6px);
+        position: relative;
+      }
+      .ov-btn:hover {
+        background: rgba(255, 255, 255, 0.42);
+        border-color: rgba(255, 255, 255, 0.9);
+        transform: scale(1.12);
+      }
+      .ov-btn.del:hover {
+        background: rgba(220, 50, 50, 0.75);
+        border-color: rgba(255, 160, 160, 0.8);
+      }
+      .ov-btn[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: calc(100% + 5px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 24, 48, 0.88);
+        color: #fff;
+        font-size: 10px;
+        padding: 3px 7px;
+        border-radius: 5px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 10;
+      }
+      .page-num-badge {
+        position: absolute;
+        top: 7px;
+        right: 7px;
+        z-index: 2;
+        background: rgba(20, 24, 48, 0.62);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        padding: 2px 7px;
+        border-radius: 5px;
+        backdrop-filter: blur(4px);
+        pointer-events: none;
+      }
+      .rot-badge {
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        z-index: 2;
+        background: var(--accent);
+        color: #fff;
+        font-size: 10px;
+        font-family: "JetBrains Mono", monospace;
+        padding: 2px 6px;
+        border-radius: 4px;
+        pointer-events: none;
+      }
+      .sel-check {
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        z-index: 3;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 11px;
+        pointer-events: none;
+      }
+      .card-src-strip {
+        height: 4px;
+        width: 100%;
+      }
+      .card-foot {
+        padding: 4px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        background: #fff;
+      }
+      .card-type {
+        font-size: 10px;
+        color: var(--accent-light);
+        font-family: "JetBrains Mono", monospace;
+      }
+      /* Crop badge */
+      .crop-badge {
+        position: absolute;
+        bottom: 7px;
+        left: 7px;
+        z-index: 2;
+        background: #059669;
+        color: #fff;
+        font-size: 9px;
+        font-family: "JetBrains Mono", monospace;
+        padding: 2px 6px;
+        border-radius: 4px;
+        pointer-events: none;
+      }
+      /* Modal */
+      .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 32, 51, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-bg.visible {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 16px;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+        overflow: hidden;
+        animation: popIn 0.18s ease;
+      }
+      .modal.wide {
+        max-width: 700px;
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .modal-head {
+        padding: 20px 24px 0;
+      }
+      .modal-title {
+        font-weight: 700;
+        font-size: 17px;
+        margin-bottom: 4px;
+      }
+      .modal-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+      .modal-body {
+        padding: 20px 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .fname-row {
+        display: flex;
+        align-items: center;
+        border: 1.5px solid var(--line);
+        border-radius: 9px;
+        overflow: hidden;
+        transition: border-color 0.15s;
+        background: #fff;
+      }
+      .fname-row:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.12);
+      }
+      .fname-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 10px 14px;
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        color: var(--ink);
+        background: transparent;
+        min-width: 0;
+      }
+      .fname-ext {
+        padding: 10px 14px 10px 0;
+        font-size: 13px;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .modal-desc {
+        font-size: 13px;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+      .b64-area {
+        width: 100%;
+        height: 72px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+        color: var(--ink-soft);
+        resize: none;
+        background: var(--bg);
+      }
+      /* Crop modal */
+      .crop-wrap {
+        position: relative;
+        display: inline-block;
+        cursor: crosshair;
+        user-select: none;
+      }
+      .crop-wrap img {
+        display: block;
+        max-width: 100%;
+        max-height: 60vh;
+      }
+      .crop-sel {
+        position: absolute;
+        border: 2px solid var(--accent);
+        background: rgba(79, 110, 247, 0.08);
+        pointer-events: none;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+      }
+      .crop-center {
+        text-align: center;
+      }
+      .crop-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .crop-tab {
+        padding: 6px 16px;
+        border-radius: 7px;
+        border: 1.5px solid var(--line);
+        background: var(--bg);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #4a4f6a;
+        transition: all 0.13s;
+      }
+      .crop-tab.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .crop-hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .crop-num-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: #4a4f6a;
+      }
+      .crop-num-row label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .crop-num-row input {
+        width: 64px;
+        padding: 4px 8px;
+        border: 1.5px solid var(--line);
+        border-radius: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        outline: none;
+      }
+      .crop-num-row input:focus {
+        border-color: var(--accent);
+      }
+      .crop-preview-note {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+      }
+      /* Loader */
+      .loader-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(247, 248, 252, 0.92);
+        backdrop-filter: blur(2px);
+        z-index: 600;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .loader-bg.visible {
+        display: flex;
+      }
+      .loader-box {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 40px 56px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid var(--line);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      .loader-msg {
+        font-size: 14px;
+        color: var(--ink-soft);
+        font-family: "JetBrains Mono", monospace;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--ink);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 700;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .toolbar-area {
+        display: none;
+      }
+      .toolbar-area.visible {
+        display: block;
+      }
+      /* Drop add overlay */
+      .main.drop-active::after {
+        content: "📂 ここにドロップして追加";
+        position: fixed;
+        inset: 0;
+        background: rgba(79, 110, 247, 0.12);
+        border: 3px dashed var(--accent);
+        border-radius: 16px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--accent);
+        pointer-events: none;
+      }
+      /* ── アプリ共通（タブ） ── */
+      .app-nav {
+        height: 52px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 28px;
+        gap: 28px;
+        position: sticky;
+        top: 0;
+        z-index: 300;
+      }
+      .app-tabs {
+        display: flex;
+        gap: 4px;
+        height: 100%;
+      }
+      .app-tab {
+        border: none;
+        background: none;
+        padding: 0 16px;
+        font:
+          600 14px "Inter",
+          sans-serif;
+        color: var(--muted);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: color 0.15s;
+      }
+      .app-tab:hover {
+        color: var(--ink);
+      }
+      .app-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .panel .hd {
+        top: 52px;
+      }
+      /* ── 白紙挿入モーダル ── */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.5px;
+      }
+      .select {
+        padding: 9px 12px;
+        border: 1.5px solid var(--line);
+        border-radius: 9px;
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        color: var(--ink);
+        background: #fff;
+        outline: none;
+      }
+      .select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.12);
+      }
+      .crop-tabs.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      /* ── 画像変換タブ専用 ── */
+      #panel-image .grid-wrap {
+        gap: 14px;
+      }
+      #panel-image .card {
+        cursor: default;
+      }
+      #panel-image .card-foot {
+        padding: 6px 10px;
+        justify-content: space-between;
+      }
+      .settings-bar {
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 8px 28px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-height: 48px;
+      }
+      .settings-bar.visible {
+        display: flex;
+      }
+      .fmt-group,
+      .dpi-group {
+        display: flex;
+        gap: 4px;
+      }
+      .fmt-btn,
+      .dpi-btn {
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1.5px solid var(--line);
+        background: var(--bg);
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .fmt-btn:hover,
+      .dpi-btn:hover {
+        border-color: var(--accent-light);
+        color: var(--accent);
+      }
+      .fmt-btn.active,
+      .dpi-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .src-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        padding: 3px 10px;
+        border-radius: 20px;
+        border: 1px solid;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .btn-success {
+        background: #10b981;
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.28);
+      }
+      .btn-success:hover {
+        background: #059669;
+      }
+      .card.converting {
+        border-color: var(--accent);
+        border-style: dashed;
+      }
+      .card.done {
+        border-color: #10b981;
+      }
+      .card.error {
+        border-color: #e03535;
+      }
+      .status-badge {
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        z-index: 2;
+        font-size: 10px;
+        font-family: "JetBrains Mono", monospace;
+        padding: 2px 6px;
+        border-radius: 4px;
+        pointer-events: none;
+        font-weight: 600;
+        color: #fff;
+      }
+      .status-badge.done {
+        background: #10b981;
+      }
+      .status-badge.converting {
+        background: var(--accent);
+      }
+      .status-badge.error {
+        background: #e03535;
+      }
+      .card-label {
+        font-size: 10px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 90px;
+      }
+      .card-dl-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        transition: all 0.13s;
+        flex-shrink: 0;
+      }
+      .card-dl-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.1);
+      }
+      .card-dl-btn:disabled {
+        background: var(--line);
+        color: var(--accent-light);
+        cursor: not-allowed;
+        transform: none;
+      }
+      .zip-progress-wrap {
+        background: var(--surface-2);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .zip-bar-bg {
+        height: 8px;
+        background: var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .zip-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        border-radius: 4px;
+        transition: width 0.2s;
+      }
+      .zip-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="app-nav">
+      <div class="hd-logo">
+        <div class="hd-icon">📄</div>
+        PDF ツールボックス
+      </div>
+      <div class="app-tabs">
+        <button class="app-tab" data-tab="editor">📑 ページ編集</button>
+        <button class="app-tab" data-tab="image">🖼 画像に変換</button>
+      </div>
+    </nav>
+
+    <section class="panel" id="panel-editor">
+      <header class="hd">
+        <div class="hd-spacer"></div>
+        <div class="hd-stat" id="ed-hd-stat" style="display: none"></div>
+        <button class="btn btn-ghost" id="ed-btn-add">＋ PDFを追加</button>
+        <button class="btn btn-danger" id="ed-btn-reset" style="display: none">🗑 リセット</button>
+        <button class="btn btn-primary" id="ed-btn-export" disabled>↓ 書き出し</button>
+      </header>
+      <div class="src-legend" id="ed-src-legend"></div>
+      <div class="toolbar-area" id="ed-toolbar-area">
+        <div class="tb" id="ed-tb">
+          <span class="tb-label">選択</span>
+          <button class="btn btn-ghost" id="ed-btn-selall" style="font-size: 12px">☑ 全選択</button>
+          <button class="btn btn-ghost" id="ed-btn-range" style="font-size: 12px">📏 範囲指定</button>
+        </div>
+        <div class="range-bar" id="ed-range-bar">
+          <span style="font-weight: 600">ページ範囲：</span>
+          <input type="number" id="ed-range-from" min="1" value="1" />
+          <span>〜</span>
+          <input type="number" id="ed-range-to" min="1" value="1" />
+          <span class="range-note" id="ed-range-note"></span>
+          <button class="btn btn-outline" id="ed-btn-apply-range" style="font-size: 12px">この範囲を選択</button>
+          <span class="range-spacer"></span>
+          <button class="btn btn-ghost" id="ed-btn-close-range" style="font-size: 12px">✕</button>
+        </div>
+      </div>
+      <main class="main" id="ed-main">
+        <div class="dropzone" id="ed-dropzone">
+          <span class="dropzone-icon">📂</span>
+          <div class="dropzone-title">PDFをここにドロップ</div>
+          <div class="dropzone-sub">複数ファイル同時に読み込み可 · クリックして選択</div>
+        </div>
+        <div class="grid-wrap" id="ed-grid" style="display: none"></div>
+      </main>
+      <input type="file" id="ed-file-input" accept="application/pdf" multiple style="display: none" />
+
+      <!-- Reset modal -->
+      <div class="modal-bg" id="ed-modal-reset">
+        <div class="modal">
+          <div class="modal-head">
+            <div class="modal-title">🗑 リセット</div>
+            <div class="modal-sub">読み込んだPDFをすべて消去します。よろしいですか？</div>
+          </div>
+          <div class="modal-body">
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="ed-btn-reset-cancel">キャンセル</button
+              ><button class="btn btn-danger" id="ed-btn-reset-confirm">リセットする</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export modal -->
+      <div class="modal-bg" id="ed-modal-export">
+        <div class="modal">
+          <div class="modal-head">
+            <div class="modal-title">📄 書き出し</div>
+            <div class="modal-sub">ファイル名を入力してください</div>
+          </div>
+          <div class="modal-body">
+            <div class="fname-row">
+              <input
+                class="fname-input"
+                type="text"
+                id="ed-fname-input"
+                placeholder="ファイル名"
+                spellcheck="false"
+              /><span class="fname-ext">.pdf</span>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="ed-btn-export-cancel">キャンセル</button
+              ><button class="btn btn-primary" id="ed-btn-export-confirm">↓ 書き出す</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blank page modal -->
+      <div class="modal-bg" id="ed-modal-blank">
+        <div class="modal">
+          <div class="modal-head">
+            <div class="modal-title">📄 白紙ページを挿入</div>
+            <div class="modal-sub">用紙サイズと向きを選んでください</div>
+          </div>
+          <div class="modal-body">
+            <label class="field"
+              ><span class="field-label">用紙サイズ</span
+              ><select class="select" id="ed-blank-size"></select
+            ></label>
+            <div class="field">
+              <span class="field-label">向き</span>
+              <div class="crop-tabs" id="ed-blank-orient">
+                <button class="crop-tab" data-orient="portrait">縦</button>
+                <button class="crop-tab" data-orient="landscape">横</button>
+              </div>
+            </div>
+            <div class="crop-preview-note" id="ed-blank-note"></div>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="ed-btn-blank-cancel">キャンセル</button>
+              <button class="btn btn-primary" id="ed-btn-blank-insert">＋ 挿入</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- b64 fallback modal -->
+      <div class="modal-bg" id="ed-modal-b64">
+        <div class="modal">
+          <div class="modal-head"><div class="modal-title">📋 PDFを保存する</div></div>
+          <div class="modal-body">
+            <p class="modal-desc">
+              直接ダウンロードできませんでした。base64データをコピーして<strong>base64デコードツール</strong>でPDFに変換できます。
+            </p>
+            <textarea class="b64-area" id="ed-b64-area" readonly></textarea>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="ed-btn-b64-close">閉じる</button
+              ><button class="btn btn-primary" id="ed-btn-b64-copy">📋 コピー</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crop modal -->
+      <div class="modal-bg" id="ed-modal-crop">
+        <div class="modal wide">
+          <div class="modal-head">
+            <div class="modal-title">✂️ トリミング</div>
+          </div>
+          <div class="modal-body">
+            <div class="crop-tabs">
+              <button class="crop-tab active" id="ed-crop-tab-one" data-crop-mode="one">このページのみ</button>
+              <button class="crop-tab" id="ed-crop-tab-all" data-crop-mode="all">全ページ同じ範囲</button>
+            </div>
+            <div class="crop-hint" id="ed-crop-hint">画像をドラッグしてトリミング範囲を選択してください</div>
+            <div class="crop-center">
+              <div class="crop-wrap" id="ed-crop-wrap">
+                <img id="ed-crop-img" src="" alt="preview" />
+                <div class="crop-sel" id="ed-crop-sel" style="display: none"></div>
+              </div>
+            </div>
+            <div class="crop-num-row">
+              <label>左 <input type="number" id="ed-cn-left" min="0" step="0.1" value="0" /> pt</label>
+              <label>上 <input type="number" id="ed-cn-top" min="0" step="0.1" value="0" /> pt</label>
+              <label>右 <input type="number" id="ed-cn-right" min="0" step="0.1" value="0" /> pt</label>
+              <label>下 <input type="number" id="ed-cn-bottom" min="0" step="0.1" value="0" /> pt</label>
+              <span class="crop-preview-note" id="ed-crop-size-note"></span>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="ed-btn-crop-reset">リセット</button>
+              <button class="btn btn-ghost" id="ed-btn-crop-cancel">キャンセル</button>
+              <button class="btn btn-primary" id="ed-btn-crop-apply">✂️ 適用</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-image">
+      <!-- Header -->
+      <header class="hd">
+        <div class="hd-spacer"></div>
+        <div class="hd-stat" id="im-hd-stat" style="display: none"></div>
+        <button class="btn btn-ghost" id="im-btn-add">＋ PDFを追加</button>
+        <button class="btn btn-danger" id="im-btn-reset" style="display: none">🗑 リセット</button>
+        <button class="btn btn-primary" id="im-btn-convert" disabled>⚡ 一括変換</button>
+        <button class="btn btn-success" id="im-btn-dl-all" style="display: none">↓ 全部まとめてDL</button>
+      </header>
+
+      <!-- Source legend -->
+      <div class="src-legend" id="im-src-legend"></div>
+
+      <!-- Settings bar -->
+      <div class="settings-bar" id="im-settings-bar">
+        <span class="tb-label">形式</span>
+        <div class="fmt-group" id="im-fmt-group">
+          <button class="fmt-btn active" data-fmt="jpeg">JPEG</button>
+          <button class="fmt-btn" data-fmt="png">PNG</button>
+          <button class="fmt-btn" data-fmt="webp">WebP</button>
+        </div>
+        <div class="tb-sep"></div>
+        <span class="tb-label">解像度</span>
+        <div class="dpi-group" id="im-dpi-group">
+          <button class="dpi-btn" data-scale="1">72dpi</button>
+          <button class="dpi-btn active" data-scale="2">144dpi</button>
+          <button class="dpi-btn" data-scale="3">216dpi</button>
+        </div>
+        <div class="tb-sep"></div>
+        <span class="tb-label" id="im-quality-label">品質</span>
+        <input
+          type="range"
+          id="im-quality-slider"
+          min="60"
+          max="100"
+          value="92"
+          style="width: 80px; accent-color: #4f6ef7"
+        />
+        <span
+          style="font-size: 12px; font-family: &quot;JetBrains Mono&quot;, monospace; color: #4f6ef7; min-width: 28px"
+          id="im-quality-val"
+          >92</span
+        >
+      </div>
+
+      <!-- Main -->
+      <main class="main" id="im-main">
+        <div class="dropzone" id="im-dropzone">
+          <span class="dropzone-icon">🖼</span>
+          <div class="dropzone-title">PDFをここにドロップ</div>
+          <div class="dropzone-sub">複数ファイル同時に読み込み可 · クリックして選択</div>
+        </div>
+        <div class="grid-wrap" id="im-grid" style="display: none"></div>
+      </main>
+
+      <!-- File input -->
+      <input type="file" id="im-file-input" accept="application/pdf" multiple style="display: none" />
+
+      <!-- Reset confirm modal -->
+      <div class="modal-bg" id="im-modal-reset">
+        <div class="modal">
+          <div class="modal-head">
+            <div class="modal-title">🗑 リセット</div>
+            <div class="modal-sub">読み込んだPDFをすべて消去します。よろしいですか？</div>
+          </div>
+          <div class="modal-body">
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="im-btn-reset-cancel">キャンセル</button>
+              <button class="btn btn-danger" id="im-btn-reset-confirm">リセットする</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ZIP download modal -->
+      <div class="modal-bg" id="im-modal-zip">
+        <div class="modal">
+          <div class="modal-head">
+            <div class="modal-title">📦 ZIPにまとめてダウンロード</div>
+            <div class="modal-sub">全ページの画像をZIPファイルにまとめます</div>
+          </div>
+          <div class="modal-body">
+            <div class="zip-progress-wrap">
+              <div class="zip-bar-bg"><div class="zip-bar" id="im-zip-bar" style="width: 0%"></div></div>
+              <div class="zip-info">
+                <span id="im-zip-info-text">準備中...</span>
+                <span id="im-zip-info-pct">0%</span>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="im-btn-zip-cancel">キャンセル</button>
+              <button class="btn btn-success" id="im-btn-zip-dl" disabled>↓ ダウンロード</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="loader-bg" id="loader">
+      <div class="loader-box">
+        <div class="spinner"></div>
+        <div class="loader-msg" id="loader-msg">読み込み中...</div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ════════ 共通部品 ════════
+      const SRC_COLORS = [
+        { bg: "#eef2ff", border: "#c7d2fe", text: "#4338ca", dot: "#6366f1" },
+        { bg: "#fdf2f8", border: "#f5d0fe", text: "#9d174d", dot: "#ec4899" },
+        { bg: "#f0fdf4", border: "#bbf7d0", text: "#166534", dot: "#22c55e" },
+        { bg: "#fff7ed", border: "#fed7aa", text: "#9a3412", dot: "#f97316" },
+        { bg: "#f0f9ff", border: "#bae6fd", text: "#075985", dot: "#0ea5e9" },
+        { bg: "#fefce8", border: "#fef08a", text: "#854d0e", dot: "#eab308" },
+      ];
+
+      let uidCounter = 0;
+      const uid = () => ++uidCounter;
+      const isPdfFile = (f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+
+      // ── ライブラリの遅延読み込み ──
+      const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+      function loadScript(src) {
+        return new Promise((res, rej) => {
+          const el = document.createElement("script");
+          el.src = src;
+          el.onload = res;
+          el.onerror = () => rej(new Error("ライブラリを読み込めません（ネット接続を確認してください）"));
+          document.head.appendChild(el);
+        });
+      }
+      async function getPDFJS() {
+        if (!window.pdfjsLib) {
+          await loadScript(CDN + "pdf.js/3.11.174/pdf.min.js");
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN + "pdf.js/3.11.174/pdf.worker.min.js";
+        }
+        return window.pdfjsLib;
+      }
+      async function getPDFLib() {
+        if (!window.PDFLib) await loadScript(CDN + "pdf-lib/1.17.1/pdf-lib.min.js");
+        return window.PDFLib;
+      }
+      async function getJSZip() {
+        if (!window.JSZip) await loadScript(CDN + "jszip/3.10.1/jszip.min.js");
+        return window.JSZip;
+      }
+
+      // ── トースト／ローディング ──
+      const toastEl = document.getElementById("toast");
+      const loaderEl = document.getElementById("loader");
+      const loaderMsgEl = document.getElementById("loader-msg");
+      let toastTimer;
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2800);
+      }
+      function setLoading(on, msg = "") {
+        loaderEl.classList.toggle("visible", on);
+        loaderMsgEl.textContent = msg;
+      }
+
+      // モーダルの外側クリックで閉じる
+      document.addEventListener("click", (e) => {
+        if (e.target.classList.contains("modal-bg")) e.target.classList.remove("visible");
+      });
+
+      // ── ファイルのドラッグ＆ドロップ（両タブ共通） ──
+      // ファイルのドロップは main 1か所で受ける。ドロップゾーンも main の子要素なのでイベントが届く。
+      function bindFileDrop({ main, dropzone, fileInput, onFiles, hasPages, isInternalDrag = () => false }) {
+        let isFileDrag = false; // OSからファイルをドラッグ中だけ true
+        let depth = 0; // 子要素の enter/leave によるちらつき防止
+        const isVisible = () => main.offsetParent !== null;
+        const clear = () => {
+          isFileDrag = false;
+          depth = 0;
+          main.classList.remove("drop-active");
+          dropzone.classList.remove("over");
+        };
+
+        dropzone.onclick = () => fileInput.click();
+        dropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropzone.classList.add("over");
+        });
+        dropzone.addEventListener("dragleave", () => dropzone.classList.remove("over"));
+
+        // capture で受けて、main より先に isFileDrag を確定させる
+        document.addEventListener(
+          "dragenter",
+          (e) => {
+            if (isVisible() && !isInternalDrag() && e.dataTransfer?.types.includes("Files")) isFileDrag = true;
+          },
+          true,
+        );
+        document.addEventListener("dragover", (e) => {
+          if (isFileDrag) e.preventDefault();
+        });
+        document.addEventListener("dragleave", (e) => {
+          if (e.relatedTarget === null) clear();
+        }); // ウィンドウ外に出た
+        document.addEventListener("drop", (e) => {
+          if (isFileDrag) {
+            e.preventDefault();
+            clear();
+          }
+        }); // 範囲外ドロップでPDFが開くのを防ぐ
+
+        main.addEventListener("dragenter", (e) => {
+          if (!isFileDrag) return;
+          e.preventDefault();
+          depth++;
+          if (hasPages()) main.classList.add("drop-active"); // 未読込のときはドロップゾーン自体が案内になる
+        });
+        main.addEventListener("dragleave", () => {
+          if (!isFileDrag) return;
+          depth = Math.max(0, depth - 1);
+          if (!depth) main.classList.remove("drop-active");
+        });
+        main.addEventListener("drop", (e) => {
+          const files = e.dataTransfer.files;
+          if (!files.length) return;
+          e.preventDefault();
+          clear();
+          onFiles(files);
+        });
+      }
+
+      // ════════ ページ編集 ════════
+      (() => {
+        let pages = [];
+        let sources = [];
+        let selected = new Set();
+        let draggingId = null;
+        let colorCounter = 0;
+
+        const root = document.getElementById("panel-editor");
+        const $ = (id) => document.getElementById("ed-" + id);
+        const dropzone = $("dropzone");
+        const grid = $("grid");
+        const fileInput = $("file-input");
+        const hdStat = $("hd-stat");
+        const btnExport = $("btn-export");
+        const tbArea = $("toolbar-area");
+        const srcLegend = $("src-legend");
+        const rangeBar = $("range-bar");
+        const rangeFrom = $("range-from");
+        const rangeTo = $("range-to");
+        const rangeNote = $("range-note");
+
+        // ── 座標系について ──
+        // cropBox は「回転前のPDFユーザー空間」での余白 {left, top, right, bottom}（pt）で保持する。
+        // 画面（モーダル／サムネイル）は回転後の座標系で見えるので、T（時計回りの合計回転角）で相互変換する。
+        function displayToUser(d, T) {
+          switch (((T % 360) + 360) % 360) {
+            case 90:
+              return { left: d.top, top: d.right, right: d.bottom, bottom: d.left };
+            case 180:
+              return { left: d.right, top: d.bottom, right: d.left, bottom: d.top };
+            case 270:
+              return { left: d.bottom, top: d.left, right: d.top, bottom: d.right };
+            default:
+              return { left: d.left, top: d.top, right: d.right, bottom: d.bottom };
+          }
+        }
+        function userToDisplay(c, T) {
+          switch (((T % 360) + 360) % 360) {
+            case 90:
+              return { left: c.bottom, top: c.left, right: c.top, bottom: c.right };
+            case 180:
+              return { left: c.right, top: c.bottom, right: c.left, bottom: c.top };
+            case 270:
+              return { left: c.top, top: c.right, right: c.bottom, bottom: c.left };
+            default:
+              return { left: c.left, top: c.top, right: c.right, bottom: c.bottom };
+          }
+        }
+
+        const PREVIEW_SCALE = 0.55;
+        async function renderCanvas(pdfDoc, pageIndex, rotation, cropBox) {
+          const pdfPage = await pdfDoc.getPage(pageIndex);
+          const totalRot = (pdfPage.rotate + rotation) % 360;
+          const vp = pdfPage.getViewport({ scale: PREVIEW_SCALE, rotation: totalRot });
+          const canvas = document.createElement("canvas");
+          let dx = 0,
+            dy = 0;
+          if (cropBox) {
+            const d = userToDisplay(cropBox, totalRot); // 回転後の見た目での余白
+            dx = d.left * PREVIEW_SCALE;
+            dy = d.top * PREVIEW_SCALE;
+            canvas.width = Math.max(1, Math.round(vp.width - (d.left + d.right) * PREVIEW_SCALE));
+            canvas.height = Math.max(1, Math.round(vp.height - (d.top + d.bottom) * PREVIEW_SCALE));
+          } else {
+            canvas.width = Math.round(vp.width);
+            canvas.height = Math.round(vp.height);
+          }
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          await pdfPage.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -dx, -dy] }).promise;
+          return canvas;
+        }
+
+        function makeBlankCanvas(w = 90, h = 127) {
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, w, h);
+          ctx.strokeStyle = "#eef0f8";
+          ctx.lineWidth = 0.5;
+          for (let y = 14; y < h; y += 14) {
+            ctx.beginPath();
+            ctx.moveTo(4, y);
+            ctx.lineTo(w - 4, y);
+            ctx.stroke();
+          }
+          return canvas;
+        }
+
+        async function loadFiles(fileList) {
+          const pdfs = Array.from(fileList).filter(isPdfFile);
+          const skipped = fileList.length - pdfs.length;
+          if (!pdfs.length) {
+            showToast("PDFファイルを選択してください");
+            return;
+          }
+          setLoading(true, "");
+          try {
+            const pdfjsLib = await getPDFJS();
+            for (let fi = 0; fi < pdfs.length; fi++) {
+              const file = pdfs[fi];
+              const rawBuf = await file.arrayBuffer();
+              const bytes = new Uint8Array(rawBuf.slice(0)); // 独立コピー
+              const pdfDoc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+              const srcId = uid();
+              const colorIdx = colorCounter++ % SRC_COLORS.length;
+              sources.push({ id: srcId, name: file.name, pdfDoc, bytes, colorIdx });
+              for (let i = 1; i <= pdfDoc.numPages; i++) {
+                setLoading(true, `${file.name}：ページ ${i}/${pdfDoc.numPages}（${fi + 1}/${pdfs.length}ファイル目）`);
+                const canvas = await renderCanvas(pdfDoc, i, 0, null);
+                pages.push({ id: uid(), srcId, pageIndex: i, rotation: 0, canvas, isBlank: false, cropBox: null });
+              }
+            }
+            if (skipped > 0) showToast("⚠️ PDF以外 " + skipped + " 件をスキップ");
+          } catch (e) {
+            showToast("読み込みエラー: " + e.message);
+            console.error(e);
+          }
+          setLoading(false);
+          render();
+        }
+
+        async function rotatePage(id, dir) {
+          const page = pages.find((p) => p.id === id);
+          if (!page || page.isBlank) return;
+          const src = sources.find((s) => s.id === page.srcId);
+          page.rotation = (((page.rotation + dir * 90) % 360) + 360) % 360;
+          page.canvas = await renderCanvas(src.pdfDoc, page.pageIndex, page.rotation, page.cropBox);
+          render();
+        }
+
+        function deletePage(id) {
+          pages = pages.filter((p) => p.id !== id);
+          selected.delete(id);
+          render();
+        }
+
+        // ── 白紙ページの挿入（用紙サイズ・向きを選択） ──
+        // 用紙サイズ(pt)は縦向き基準。横向きのときは幅と高さを入れ替える。
+        const PAGE_SIZES = [
+          { key: "A3", label: "A3（297 × 420 mm）", w: 842, h: 1191 },
+          { key: "A4", label: "A4（210 × 297 mm）", w: 595, h: 842 },
+          { key: "A5", label: "A5（148 × 210 mm）", w: 420, h: 595 },
+          { key: "B4", label: "B4 JIS（257 × 364 mm）", w: 729, h: 1032 },
+          { key: "B5", label: "B5 JIS（182 × 257 mm）", w: 516, h: 729 },
+          { key: "Letter", label: "Letter（8.5 × 11 in）", w: 612, h: 792 },
+          { key: "Legal", label: "Legal（8.5 × 14 in）", w: 612, h: 1008 },
+        ];
+        const blankOpts = { size: "same", orient: "portrait" }; // 前回の選択を次回も引き継ぐ
+        let blankInsertAt = 0;
+
+        const neighborPage = (idx) => pages[idx - 1] || pages[idx] || null;
+        const pagePtSize = (page) =>
+          page.isBlank
+            ? { w: page.pdfW, h: page.pdfH }
+            : { w: Math.round(page.canvas.width / PREVIEW_SCALE), h: Math.round(page.canvas.height / PREVIEW_SCALE) };
+
+        function resolveBlankSize(idx) {
+          const ref = blankOpts.size === "same" ? neighborPage(idx) : null;
+          if (ref) return pagePtSize(ref);
+          const preset = PAGE_SIZES.find((s) => s.key === blankOpts.size) || PAGE_SIZES[1];
+          return blankOpts.orient === "landscape" ? { w: preset.h, h: preset.w } : { w: preset.w, h: preset.h };
+        }
+
+        function refreshBlankModal() {
+          const same = blankOpts.size === "same";
+          $("blank-size").value = blankOpts.size;
+          $("blank-orient").classList.toggle("disabled", same); // 「隣と同じ」のときは向きも隣に合わせる
+          root
+            .querySelectorAll("[data-orient]")
+            .forEach((btn) => btn.classList.toggle("active", btn.dataset.orient === blankOpts.orient));
+          const { w, h } = resolveBlankSize(blankInsertAt);
+          $("blank-note").textContent = `仕上がりサイズ：${w} × ${h} pt（${w > h ? "横" : "縦"}向き）`;
+        }
+
+        function openBlankModal(idx) {
+          blankInsertAt = idx;
+          if (blankOpts.size === "same" && !neighborPage(idx)) blankOpts.size = "A4";
+          refreshBlankModal();
+          $("modal-blank").classList.add("visible");
+        }
+
+        function insertBlank() {
+          const { w, h } = resolveBlankSize(blankInsertAt);
+          const canvas = makeBlankCanvas(Math.round(w * PREVIEW_SCALE), Math.round(h * PREVIEW_SCALE));
+          pages.splice(blankInsertAt, 0, {
+            id: uid(),
+            srcId: null,
+            pageIndex: null,
+            rotation: 0,
+            canvas,
+            isBlank: true,
+            pdfW: w,
+            pdfH: h,
+            cropBox: null,
+          });
+          $("modal-blank").classList.remove("visible");
+          showToast("白紙ページを挿入しました");
+          render();
+        }
+
+        $("blank-size").innerHTML = ['<option value="same">隣のページと同じサイズ</option>']
+          .concat(PAGE_SIZES.map((s) => `<option value="${s.key}">${s.label}</option>`))
+          .join("");
+        $("blank-size").onchange = (e) => {
+          blankOpts.size = e.target.value;
+          refreshBlankModal();
+        };
+        root.querySelectorAll("[data-orient]").forEach((btn) => {
+          btn.onclick = () => {
+            blankOpts.orient = btn.dataset.orient;
+            refreshBlankModal();
+          };
+        });
+        $("btn-blank-cancel").onclick = () => $("modal-blank").classList.remove("visible");
+        $("btn-blank-insert").onclick = insertBlank;
+
+        function toggleSel(id, e) {
+          if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            selected.has(id) ? selected.delete(id) : selected.add(id);
+          } else {
+            selected.clear();
+            selected.add(id);
+          }
+          render();
+        }
+
+        // ── Download ──
+        function toBase64(bytes) {
+          let bin = "";
+          const ch = 8192;
+          for (let i = 0; i < bytes.length; i += ch) bin += String.fromCharCode(...bytes.subarray(i, i + ch));
+          return btoa(bin);
+        }
+
+        async function downloadPDF(bytes, filename) {
+          if (window.showSaveFilePicker) {
+            try {
+              const h = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+              });
+              const w = await h.createWritable();
+              await w.write(bytes);
+              await w.close();
+              return { ok: true };
+            } catch (e) {
+              if (e.name === "AbortError") return { ok: "cancelled" };
+            }
+          }
+          const clickLink = (href) => {
+            const a = document.createElement("a");
+            a.href = href;
+            a.download = filename;
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          };
+          try {
+            const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+            clickLink(url);
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            return { ok: true };
+          } catch (_) {}
+          const b64 = toBase64(bytes);
+          try {
+            clickLink("data:application/pdf;base64," + b64);
+            return { ok: true };
+          } catch (_) {}
+          return { ok: false, b64 };
+        }
+
+        function sanitise(name) {
+          return (
+            name
+              .trim()
+              .replace(/\.pdf$/i, "")
+              .replace(/[\\/:*?"<>|]/g, "_") || "edited"
+          );
+        }
+
+        async function runExport() {
+          const finalName = sanitise($("fname-input").value) + ".pdf";
+          $("modal-export").classList.remove("visible");
+          setLoading(true, "PDFを生成中...");
+          try {
+            const { PDFDocument, degrees, rgb } = await getPDFLib();
+            const srcDocs = {};
+            for (const src of sources) {
+              const buf = src.bytes.buffer.slice(src.bytes.byteOffset, src.bytes.byteOffset + src.bytes.byteLength);
+              srcDocs[src.id] = await PDFDocument.load(buf);
+            }
+            const newDoc = await PDFDocument.create();
+            for (const page of pages) {
+              if (page.isBlank) {
+                const bp = newDoc.addPage([page.pdfW || 595, page.pdfH || 842]);
+                bp.drawRectangle({ x: 0, y: 0, width: bp.getWidth(), height: bp.getHeight(), color: rgb(1, 1, 1) });
+              } else {
+                const [copied] = await newDoc.copyPages(srcDocs[page.srcId], [page.pageIndex - 1]);
+                // プレビューと同じ基準(pdf.js)で回転・表示範囲を決める
+                const jsPage = await sources.find((s) => s.id === page.srcId).pdfDoc.getPage(page.pageIndex);
+                copied.setRotation(degrees((jsPage.rotate + page.rotation) % 360));
+                if (page.cropBox) {
+                  // view = pdf.js が実際に描画する範囲 [x0,y0,x1,y1]（CropBox ∩ MediaBox）
+                  const [vx0, vy0, vx1, vy1] = jsPage.view;
+                  const { left, top, right, bottom } = page.cropBox; // ユーザー空間の余白
+                  const x = vx0 + left,
+                    y = vy0 + bottom;
+                  const w = vx1 - vx0 - left - right,
+                    h = vy1 - vy0 - top - bottom;
+                  copied.setMediaBox(x, y, w, h);
+                  copied.setCropBox(x, y, w, h);
+                  copied.setTrimBox(x, y, w, h);
+                  copied.setBleedBox(x, y, w, h);
+                  copied.setArtBox(x, y, w, h);
+                }
+                newDoc.addPage(copied);
+              }
+            }
+            setLoading(true, "保存中...");
+            const bytes = await newDoc.save();
+            setLoading(false);
+            const result = await downloadPDF(bytes, finalName);
+            if (result.ok === true) showToast("✅ 「" + finalName + "」を書き出しました");
+            else if (result.ok !== "cancelled") {
+              $("b64-area").value = result.b64;
+              $("modal-b64").classList.add("visible");
+            }
+          } catch (e) {
+            setLoading(false);
+            showToast("エラー: " + e.message);
+            console.error(e);
+          }
+        }
+
+        // ── Crop ──
+        let cropPageId = null;
+        let cropMode = "one"; // 'one' | 'all'
+        let cropRect = { x: 0, y: 0, w: 0, h: 0 }; // in img display coords
+        let cropPagePdfW = 0,
+          cropPagePdfH = 0;
+        const cropTargets = () =>
+          cropMode === "all" ? pages.filter((p) => !p.isBlank) : pages.filter((p) => p.id === cropPageId);
+
+        function setCropMode(mode) {
+          cropMode = mode;
+          $("crop-tab-one").classList.toggle("active", mode === "one");
+          $("crop-tab-all").classList.toggle("active", mode === "all");
+          $("crop-hint").textContent =
+            mode === "all"
+              ? "全ページに同じトリミングを適用します。ドラッグして範囲を選択してください"
+              : "画像をドラッグしてトリミング範囲を選択してください";
+        }
+
+        async function openCropModal(pageId) {
+          cropPageId = pageId;
+          const page = pages.find((p) => p.id === pageId);
+          if (!page || page.isBlank) return;
+          const src = sources.find((s) => s.id === page.srcId);
+
+          const pdfPage = await src.pdfDoc.getPage(page.pageIndex);
+          const totalRot = (pdfPage.rotate + page.rotation) % 360;
+          // 回転後の見た目と同じ向きで高解像度プレビューを描画
+          const vp = pdfPage.getViewport({ scale: 1.5, rotation: totalRot });
+          const tmpCanvas = document.createElement("canvas");
+          tmpCanvas.width = Math.round(vp.width);
+          tmpCanvas.height = Math.round(vp.height);
+          await pdfPage.render({ canvasContext: tmpCanvas.getContext("2d"), viewport: vp }).promise;
+
+          // 回転後の見た目でのページサイズ(pt)。画像の縦横比と必ず一致する
+          const vpNat = pdfPage.getViewport({ scale: 1, rotation: totalRot });
+          cropPagePdfW = vpNat.width;
+          cropPagePdfH = vpNat.height;
+
+          const img = $("crop-img");
+          img.onload = () => {
+            if (page.cropBox) {
+              const r = img.getBoundingClientRect();
+              const sx = r.width / cropPagePdfW,
+                sy = r.height / cropPagePdfH;
+              const d = userToDisplay(page.cropBox, totalRot);
+              cropRect = {
+                x: d.left * sx,
+                y: d.top * sy,
+                w: (cropPagePdfW - d.left - d.right) * sx,
+                h: (cropPagePdfH - d.top - d.bottom) * sy,
+              };
+              updateCropSelUI();
+            } else {
+              cropRect = { x: 0, y: 0, w: 0, h: 0 };
+              $("crop-sel").style.display = "none";
+            }
+            updateCropNumFromRect();
+          };
+          $("modal-crop").classList.add("visible");
+          img.src = tmpCanvas.toDataURL();
+          setCropMode("one");
+        }
+
+        function updateCropSelUI() {
+          const sel = $("crop-sel");
+          // cropRect is already in img display-pixel coords (from getBoundingClientRect)
+          if (cropRect.w < 2 || cropRect.h < 2) {
+            sel.style.display = "none";
+            return;
+          }
+          sel.style.display = "";
+          sel.style.left = cropRect.x + "px";
+          sel.style.top = cropRect.y + "px";
+          sel.style.width = cropRect.w + "px";
+          sel.style.height = cropRect.h + "px";
+        }
+
+        function updateCropNumFromRect() {
+          const img = $("crop-img");
+          const r = img.getBoundingClientRect();
+          if (!r.width) return;
+          const rd = (v) => Math.max(0, Math.round(v * 10) / 10);
+          if (cropRect.w < 1 || cropRect.h < 1) {
+            // 未選択のときは余白ゼロ（以前は 右/下 がページ全幅になっていた）
+            $("cn-left").value = $("cn-top").value = $("cn-right").value = $("cn-bottom").value = 0;
+            updateCropSizeNote();
+            return;
+          }
+          const scaleX = cropPagePdfW / r.width;
+          const scaleY = cropPagePdfH / r.height;
+          $("cn-left").value = rd(cropRect.x * scaleX);
+          $("cn-top").value = rd(cropRect.y * scaleY);
+          $("cn-right").value = rd((r.width - cropRect.x - cropRect.w) * scaleX);
+          $("cn-bottom").value = rd((r.height - cropRect.y - cropRect.h) * scaleY);
+          updateCropSizeNote();
+        }
+
+        function updateCropRectFromNum() {
+          const img = $("crop-img");
+          const rect = img.getBoundingClientRect();
+          if (!rect.width) return;
+          const scaleX = rect.width / cropPagePdfW;
+          const scaleY = rect.height / cropPagePdfH;
+          const l = +$("cn-left").value || 0;
+          const t = +$("cn-top").value || 0;
+          const rr = +$("cn-right").value || 0;
+          const b = +$("cn-bottom").value || 0;
+          cropRect.x = l * scaleX;
+          cropRect.y = t * scaleY;
+          cropRect.w = (cropPagePdfW - l - rr) * scaleX;
+          cropRect.h = (cropPagePdfH - t - b) * scaleY;
+          updateCropSelUI();
+          updateCropSizeNote();
+        }
+
+        function updateCropSizeNote() {
+          const w = cropPagePdfW - (+$("cn-left").value || 0) - (+$("cn-right").value || 0);
+          const h = cropPagePdfH - (+$("cn-top").value || 0) - (+$("cn-bottom").value || 0);
+          $("crop-size-note").textContent =
+            `仕上がりサイズ：${Math.max(0, Math.round(w))} × ${Math.max(0, Math.round(h))} pt`;
+        }
+
+        root.querySelectorAll("[data-crop-mode]").forEach((btn) => {
+          btn.onclick = () => setCropMode(btn.dataset.cropMode);
+        });
+
+        // Crop drag
+        const cropWrap = $("crop-wrap");
+        cropWrap.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) return;
+          const img = $("crop-img");
+          const rect = img.getBoundingClientRect();
+          const startX = e.clientX - rect.left;
+          const startY = e.clientY - rect.top;
+
+          const onMove = (ev) => {
+            const r2 = img.getBoundingClientRect();
+            const cx = Math.min(Math.max(0, ev.clientX - r2.left), r2.width);
+            const cy = Math.min(Math.max(0, ev.clientY - r2.top), r2.height);
+            cropRect.x = Math.min(startX, cx);
+            cropRect.y = Math.min(startY, cy);
+            cropRect.w = Math.abs(cx - startX);
+            cropRect.h = Math.abs(cy - startY);
+            updateCropSelUI();
+            updateCropNumFromRect();
+          };
+          const onUp = () => {
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+          };
+          document.addEventListener("mousemove", onMove);
+          document.addEventListener("mouseup", onUp);
+          e.preventDefault();
+        });
+
+        ["cn-left", "cn-top", "cn-right", "cn-bottom"].forEach((id) => {
+          $(id).addEventListener("input", updateCropRectFromNum);
+        });
+
+        $("btn-crop-reset").onclick = async () => {
+          cropRect = { x: 0, y: 0, w: 0, h: 0 };
+          $("crop-sel").style.display = "none";
+          $("cn-left").value = $("cn-top").value = $("cn-right").value = $("cn-bottom").value = 0;
+          updateCropSizeNote();
+          // Clear crop from page(s)
+          const targets = cropTargets();
+          setLoading(true, "プレビュー更新中...");
+          for (const page of targets) {
+            page.cropBox = null;
+            const src = sources.find((s) => s.id === page.srcId);
+            page.canvas = await renderCanvas(src.pdfDoc, page.pageIndex, page.rotation, null);
+          }
+          setLoading(false);
+          render();
+        };
+
+        $("btn-crop-cancel").onclick = () => $("modal-crop").classList.remove("visible");
+
+        $("btn-crop-apply").onclick = async () => {
+          const disp = {
+            left: +$("cn-left").value || 0,
+            top: +$("cn-top").value || 0,
+            right: +$("cn-right").value || 0,
+            bottom: +$("cn-bottom").value || 0,
+          };
+          const isNull = !disp.left && !disp.top && !disp.right && !disp.bottom;
+
+          if (disp.left + disp.right >= cropPagePdfW || disp.top + disp.bottom >= cropPagePdfH) {
+            showToast("トリミング範囲が大きすぎます");
+            return;
+          }
+
+          const targets = cropTargets();
+
+          $("modal-crop").classList.remove("visible");
+          setLoading(true, "トリミング適用中...");
+          let skipped = 0;
+          for (let i = 0; i < targets.length; i++) {
+            const page = targets[i];
+            setLoading(true, `トリミング適用中 ${i + 1}/${targets.length}`);
+            const src = sources.find((s) => s.id === page.srcId);
+            const jsPage = await src.pdfDoc.getPage(page.pageIndex);
+            const T = (jsPage.rotate + page.rotation) % 360; // このページの見た目の回転角
+            const vp = jsPage.getViewport({ scale: 1, rotation: T });
+            if (!isNull && (disp.left + disp.right >= vp.width || disp.top + disp.bottom >= vp.height)) {
+              skipped++;
+              continue;
+            }
+            // 見た目の余白 → 回転前のユーザー空間の余白に変換して保存（以後の回転・書き出しでも同じ位置を指す）
+            page.cropBox = isNull ? null : displayToUser(disp, T);
+            page.canvas = await renderCanvas(src.pdfDoc, page.pageIndex, page.rotation, page.cropBox);
+          }
+          setLoading(false);
+          const done = targets.length - skipped;
+          showToast(
+            cropMode === "all"
+              ? `${done}ページにトリミングを適用しました` +
+                  (skipped ? `（${skipped}ページは範囲外のためスキップ）` : "")
+              : "トリミングを適用しました",
+          );
+          render();
+        };
+
+        // ── Render ──
+        function render() {
+          const hasPages = pages.length > 0;
+          dropzone.style.display = hasPages ? "none" : "";
+          grid.style.display = hasPages ? "" : "none";
+          hdStat.style.display = hasPages ? "" : "none";
+          hdStat.textContent =
+            pages.length + " pages · " + sources.length + " file" + (sources.length !== 1 ? "s" : "");
+          btnExport.disabled = !hasPages;
+          $("btn-reset").style.display = hasPages ? "" : "none";
+          tbArea.classList.toggle("visible", hasPages);
+          rangeNote.textContent = "（全" + pages.length + "ページ）";
+          rangeTo.max = rangeFrom.max = pages.length;
+          $("btn-selall").textContent = selected.size === pages.length && pages.length > 0 ? "✕ 全解除" : "☑ 全選択";
+          renderSelActions();
+          renderLegend();
+          renderGrid();
+        }
+
+        function renderSelActions() {
+          const tb = $("tb");
+          tb.querySelectorAll(".sel-action").forEach((el) => el.remove());
+          if (!selected.size) return;
+          const mk = (tag, cls, text, onclick) => {
+            const el = document.createElement(tag);
+            el.className = cls + " sel-action";
+            el.textContent = text;
+            if (onclick) {
+              el.onclick = onclick;
+              el.style.fontSize = "12px";
+            }
+            return el;
+          };
+          tb.append(
+            mk("span", "tb-sep", ""),
+            mk("span", "sel-chip", selected.size + "ページ選択中"),
+            mk("button", "btn btn-ghost", "↺ 左90°", () => rotateSelAll(-1)),
+            mk("button", "btn btn-ghost", "↻ 右90°", () => rotateSelAll(1)),
+            mk("button", "btn btn-danger", "🗑 削除", deleteSelected),
+            mk("button", "btn btn-ghost", "✕ 解除", () => {
+              selected.clear();
+              render();
+            }),
+          );
+        }
+
+        function renderLegend() {
+          if (!sources.length) {
+            srcLegend.classList.remove("visible");
+            return;
+          }
+          srcLegend.classList.add("visible");
+          srcLegend.innerHTML = '<span class="src-legend-label">ファイル</span>';
+          sources.forEach((src) => {
+            const c = SRC_COLORS[src.colorIdx];
+            const srcPages = pages.filter((p) => p.srcId === src.id);
+            if (!srcPages.length) return;
+            const group = document.createElement("span");
+            group.style.cssText =
+              "display:inline-flex;align-items:center;gap:4px;background:" +
+              c.bg +
+              ";border:1px solid " +
+              c.border +
+              ";border-radius:20px;padding:3px 6px 3px 10px;";
+            const dot = document.createElement("span");
+            dot.className = "src-dot";
+            dot.style.background = c.dot;
+            group.appendChild(dot);
+            const name = document.createElement("span");
+            name.style.cssText =
+              'font-size:11px;font-weight:600;font-family:"JetBrains Mono",monospace;color:' +
+              c.text +
+              ";max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;";
+            name.title = src.name + "　クリックで選択";
+            name.textContent = src.name.replace(/\.pdf$/i, "");
+            name.onclick = () => {
+              const ids = srcPages.map((p) => p.id);
+              const allSel = ids.every((id) => selected.has(id));
+              ids.forEach((id) => (allSel ? selected.delete(id) : selected.add(id)));
+              render();
+            };
+            group.appendChild(name);
+            const cnt = document.createElement("span");
+            cnt.style.cssText =
+              'font-size:10px;font-family:"JetBrains Mono",monospace;color:' + c.text + ";opacity:.7;margin-left:2px;";
+            cnt.textContent = srcPages.length + "p";
+            group.appendChild(cnt);
+            const del = document.createElement("button");
+            del.title = "このファイルのページをすべて削除";
+            del.style.cssText =
+              "margin-left:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.1);color:" +
+              c.text +
+              ";cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;";
+            del.textContent = "✕";
+            del.onclick = () => {
+              const ids = new Set(srcPages.map((p) => p.id));
+              pages = pages.filter((p) => !ids.has(p.id));
+              ids.forEach((id) => selected.delete(id));
+              sources = sources.filter((s) => s.id !== src.id);
+              showToast(src.name.replace(/\.pdf$/i, "") + " を削除しました");
+              render();
+            };
+            group.appendChild(del);
+            srcLegend.appendChild(group);
+          });
+        }
+
+        function renderGrid() {
+          grid.innerHTML = "";
+          const srcColorMap = Object.fromEntries(sources.map((s) => [s.id, SRC_COLORS[s.colorIdx]]));
+          pages.forEach((page, i) => {
+            grid.appendChild(makeGap(i));
+            grid.appendChild(makeCard(page, i, srcColorMap));
+          });
+          if (pages.length) grid.appendChild(makeGap(pages.length));
+        }
+
+        function makeGap(insertAt) {
+          const wrap = document.createElement("div");
+          wrap.className = "gap-zone";
+          wrap.innerHTML =
+            '<div class="gap-zone-inner"><div class="gap-line"></div><button class="gap-btn" title="白紙を挿入">＋</button></div>';
+          wrap.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openBlankModal(insertAt);
+          });
+          return wrap;
+        }
+
+        function makeCard(page, idx, srcColorMap) {
+          const wrap = document.createElement("div");
+          wrap.className = "card-wrap";
+          const card = document.createElement("div");
+          const cls = ["card"];
+          if (page.isBlank) cls.push("blank-card");
+          if (selected.has(page.id)) cls.push("sel");
+          card.className = cls.join(" ");
+          card.draggable = true;
+          card.dataset.id = page.id;
+
+          const thumb = document.createElement("div");
+          thumb.className = "card-thumb";
+          if (page.canvas) {
+            const c = document.createElement("canvas");
+            c.width = page.canvas.width;
+            c.height = page.canvas.height;
+            c.getContext("2d").drawImage(page.canvas, 0, 0);
+            thumb.appendChild(c);
+          } else {
+            thumb.innerHTML =
+              '<div class="blank-ph"><span class="blank-ph-icon">📄</span><span class="blank-ph-label">BLANK</span></div>';
+          }
+
+          // Overlay buttons
+          const overlay = document.createElement("div");
+          overlay.className = "card-overlay";
+          if (!page.isBlank) {
+            const bl = document.createElement("button");
+            bl.className = "ov-btn";
+            bl.title = "左90°回転";
+            bl.textContent = "↺";
+            bl.onclick = (e) => {
+              e.stopPropagation();
+              rotatePage(page.id, -1);
+            };
+            overlay.appendChild(bl);
+          }
+          const bd = document.createElement("button");
+          bd.className = "ov-btn del";
+          bd.title = "削除";
+          bd.textContent = "🗑";
+          bd.onclick = (e) => {
+            e.stopPropagation();
+            deletePage(page.id);
+          };
+          overlay.appendChild(bd);
+          if (!page.isBlank) {
+            const bc = document.createElement("button");
+            bc.className = "ov-btn";
+            bc.title = "トリミング";
+            bc.textContent = "✂️";
+            bc.onclick = (e) => {
+              e.stopPropagation();
+              openCropModal(page.id);
+            };
+            overlay.appendChild(bc);
+            const br = document.createElement("button");
+            br.className = "ov-btn";
+            br.title = "右90°回転";
+            br.textContent = "↻";
+            br.onclick = (e) => {
+              e.stopPropagation();
+              rotatePage(page.id, 1);
+            };
+            overlay.appendChild(br);
+          }
+          thumb.appendChild(overlay);
+
+          // Badges
+          const nb = document.createElement("div");
+          nb.className = "page-num-badge";
+          nb.textContent = "p." + (idx + 1);
+          thumb.appendChild(nb);
+          if (page.rotation && !selected.has(page.id)) {
+            const rb = document.createElement("div");
+            rb.className = "rot-badge";
+            rb.textContent = page.rotation + "°";
+            thumb.appendChild(rb);
+          }
+          if (selected.has(page.id)) {
+            const sc = document.createElement("div");
+            sc.className = "sel-check";
+            sc.textContent = "✓";
+            thumb.appendChild(sc);
+          }
+          if (page.cropBox) {
+            const cb = document.createElement("div");
+            cb.className = "crop-badge";
+            cb.textContent = "✂ クロップ済";
+            thumb.appendChild(cb);
+          }
+
+          card.appendChild(thumb);
+          if (!page.isBlank && srcColorMap[page.srcId]) {
+            const strip = document.createElement("div");
+            strip.className = "card-src-strip";
+            strip.style.background = srcColorMap[page.srcId].dot;
+            card.appendChild(strip);
+          }
+          if (page.isBlank) {
+            const foot = document.createElement("div");
+            foot.className = "card-foot";
+            foot.innerHTML = '<span class="card-type">白紙</span>';
+            card.appendChild(foot);
+          }
+
+          card.addEventListener("click", (e) => toggleSel(page.id, e));
+          card.addEventListener("dragstart", (e) => {
+            draggingId = page.id;
+            e.dataTransfer.effectAllowed = "move";
+            setTimeout(() => card.classList.add("dragging"), 0);
+          });
+          card.addEventListener("dragend", () => {
+            draggingId = null;
+            card.classList.remove("dragging");
+            render();
+          });
+          card.addEventListener("dragenter", (e) => {
+            e.preventDefault();
+            if (draggingId && draggingId !== page.id) {
+              card.classList.add("dtarget");
+            }
+          });
+          card.addEventListener("dragleave", () => card.classList.remove("dtarget"));
+          card.addEventListener("dragover", (e) => e.preventDefault());
+          card.addEventListener("drop", (e) => {
+            e.preventDefault();
+            card.classList.remove("dtarget");
+            if (!draggingId || draggingId === page.id) return;
+            const fi = pages.findIndex((p) => p.id === draggingId),
+              ti = pages.findIndex((p) => p.id === page.id);
+            const [item] = pages.splice(fi, 1);
+            pages.splice(ti, 0, item);
+            render();
+          });
+          wrap.appendChild(card);
+          return wrap;
+        }
+
+        async function rotateSelAll(dir) {
+          for (const id of selected) await rotatePage(id, dir);
+        }
+        function deleteSelected() {
+          const n = selected.size;
+          pages = pages.filter((p) => !selected.has(p.id));
+          selected.clear();
+          showToast(n + "ページを削除しました");
+          render();
+        }
+
+        // ── Events ──
+        $("btn-add").onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+          loadFiles(e.target.files);
+          e.target.value = "";
+        };
+
+        // ── Drag & drop ──
+        bindFileDrop({
+          main: $("main"),
+          dropzone,
+          fileInput,
+          onFiles: loadFiles,
+          hasPages: () => pages.length > 0,
+          isInternalDrag: () => !!draggingId,
+        });
+
+        $("btn-selall").onclick = () => {
+          if (selected.size === pages.length && pages.length > 0) selected.clear();
+          else pages.forEach((p) => selected.add(p.id));
+          render();
+        };
+        $("btn-range").onclick = () => rangeBar.classList.toggle("visible");
+        $("btn-close-range").onclick = () => rangeBar.classList.remove("visible");
+        $("btn-apply-range").onclick = () => {
+          const from = Math.max(1, parseInt(rangeFrom.value) || 1) - 1,
+            to = Math.min(pages.length, parseInt(rangeTo.value) || pages.length);
+          selected.clear();
+          pages.slice(from, to).forEach((p) => selected.add(p.id));
+          showToast(to - from + "ページを選択しました");
+          render();
+        };
+
+        $("btn-reset").onclick = () => $("modal-reset").classList.add("visible");
+        $("btn-reset-cancel").onclick = () => $("modal-reset").classList.remove("visible");
+        $("btn-reset-confirm").onclick = () => {
+          pages = [];
+          sources = [];
+          selected.clear();
+          colorCounter = 0;
+          draggingId = null;
+          rangeBar.classList.remove("visible");
+          $("modal-reset").classList.remove("visible");
+          showToast("リセットしました");
+          render();
+        };
+
+        btnExport.onclick = () => {
+          $("fname-input").value = sources[0]?.name.replace(/\.pdf$/i, "") || "edited";
+          $("modal-export").classList.add("visible");
+          setTimeout(() => $("fname-input").select(), 60);
+        };
+        $("fname-input").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") runExport();
+          if (e.key === "Escape") $("modal-export").classList.remove("visible");
+        });
+        $("btn-export-confirm").onclick = runExport;
+        $("btn-export-cancel").onclick = () => $("modal-export").classList.remove("visible");
+
+        $("btn-b64-close").onclick = () => $("modal-b64").classList.remove("visible");
+        $("btn-b64-copy").onclick = () => {
+          navigator.clipboard?.writeText($("b64-area").value);
+          showToast("コピーしました");
+          $("modal-b64").classList.remove("visible");
+        };
+        $("b64-area").onclick = (e) => e.target.select();
+
+        render();
+      })();
+
+      // ════════ 画像変換 ════════
+      (() => {
+        // ── State ──
+        let pages = []; // {id, srcId, pageIndex, canvas, label, imageBlob, status}
+        let sources = []; // {id, name, pdfDoc, colorIdx}
+        let colorCounter = 0;
+
+        let fmt = "jpeg";
+        let scale = 2;
+        let quality = 0.92;
+        let zipBlob = null;
+        let zipCancelled = false;
+
+        // ── DOM refs ──
+        const root = document.getElementById("panel-image");
+        const $ = (id) => document.getElementById("im-" + id);
+        const dropzone = $("dropzone");
+        const grid = $("grid");
+        const fileInput = $("file-input");
+
+        // ── Render page to canvas ──
+        async function renderCanvas(pdfDoc, pageIndex) {
+          const pdfPage = await pdfDoc.getPage(pageIndex);
+          const vp = pdfPage.getViewport({ scale: 0.55 }); // thumbnail
+          const canvas = document.createElement("canvas");
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          await pdfPage.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+          return canvas;
+        }
+
+        // ── Render page at full resolution ──
+        async function renderFullRes(pdfDoc, pageIndex) {
+          const pdfPage = await pdfDoc.getPage(pageIndex);
+          const vp = pdfPage.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          await pdfPage.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+          return canvas;
+        }
+
+        // ── Canvas to Blob ──
+        function canvasToBlob(canvas) {
+          const mimeMap = { jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
+          const mime = mimeMap[fmt];
+          const q = fmt === "png" ? undefined : quality;
+          return new Promise((res) => canvas.toBlob(res, mime, q));
+        }
+
+        // ── Load PDF files ──
+        async function loadFiles(fileList) {
+          const pdfs = Array.from(fileList).filter(isPdfFile);
+          const skipped = fileList.length - pdfs.length;
+          if (!pdfs.length) {
+            showToast("PDFファイルを選択してください");
+            return;
+          }
+          setLoading(true, "");
+          try {
+            const pdfjsLib = await getPDFJS();
+            for (let fi = 0; fi < pdfs.length; fi++) {
+              const file = pdfs[fi];
+              const buf = await file.arrayBuffer();
+              const pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+              const srcId = uid();
+              const colorIdx = colorCounter++ % SRC_COLORS.length;
+              sources.push({ id: srcId, name: file.name, pdfDoc, colorIdx });
+              for (let i = 1; i <= pdfDoc.numPages; i++) {
+                setLoading(
+                  true,
+                  `${file.name}：ページ ${i}/${pdfDoc.numPages}　（${fi + 1}/${pdfs.length} ファイル目）`,
+                );
+                const canvas = await renderCanvas(pdfDoc, i);
+                const baseName = file.name.replace(/\.pdf$/i, "");
+                const label = pdfDoc.numPages === 1 ? baseName : `${baseName}_p${String(i).padStart(3, "0")}`;
+                pages.push({ id: uid(), srcId, pageIndex: i, canvas, label, imageBlob: null, status: "pending" });
+              }
+            }
+            if (skipped > 0) showToast(`⚠️ PDF以外のファイル ${skipped} 件をスキップしました`);
+          } catch (e) {
+            showToast("読み込みエラー: " + e.message);
+          }
+          setLoading(false);
+          render();
+        }
+
+        // ── Convert one page ──
+        async function convertPage(page) {
+          const src = sources.find((s) => s.id === page.srcId);
+          if (!src) return;
+          page.status = "converting";
+          updateCard(page);
+          try {
+            const fullCanvas = await renderFullRes(src.pdfDoc, page.pageIndex);
+            page.imageBlob = await canvasToBlob(fullCanvas);
+            page.status = "done";
+          } catch (e) {
+            page.status = "error";
+          }
+          updateCard(page);
+        }
+
+        // ── Convert all pages ──
+        async function convertAll() {
+          $("btn-convert").disabled = true;
+          for (const page of pages) {
+            if (page.status !== "done") await convertPage(page);
+          }
+          $("btn-convert").disabled = false;
+          $("btn-dl-all").style.display = "";
+          showToast(`✅ ${pages.length} ページの変換が完了しました`);
+          updateHeader();
+        }
+
+        // ── Download single ──
+        function downloadPage(page) {
+          if (!page.imageBlob) return;
+          const url = URL.createObjectURL(page.imageBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${page.label}.${fmt}`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        // ── ZIP download ──
+        async function buildZip() {
+          zipCancelled = false;
+          zipBlob = null;
+          $("btn-zip-dl").disabled = true;
+          $("modal-zip").classList.add("visible");
+
+          const unconverted = pages.filter((p) => p.status !== "done");
+          const total = pages.length;
+          let done = 0;
+
+          const updateProgress = () => {
+            const pct = Math.round((done / total) * 100);
+            $("zip-bar").style.width = pct + "%";
+            $("zip-info-pct").textContent = pct + "%";
+          };
+          updateProgress();
+
+          // Convert any unconverted pages first
+          for (const page of pages) {
+            if (zipCancelled) return;
+            if (page.status !== "done") {
+              $("zip-info-text").textContent = `変換中: ${page.label}`;
+              await convertPage(page);
+            }
+            done++;
+            updateProgress();
+          }
+
+          if (zipCancelled) return;
+          $("zip-info-text").textContent = "ZIPを作成中...";
+
+          const JSZip = await getJSZip();
+          const zip = new JSZip();
+          for (const page of pages) {
+            if (page.imageBlob) {
+              zip.file(`${page.label}.${fmt}`, page.imageBlob);
+            }
+          }
+          zipBlob = await zip.generateAsync({ type: "blob" });
+          $("zip-info-text").textContent = "完成！";
+          $("zip-bar").style.width = "100%";
+          $("zip-info-pct").textContent = "100%";
+          $("btn-zip-dl").disabled = false;
+          $("btn-dl-all").style.display = "";
+          updateHeader();
+        }
+
+        // ── Render / update ──
+        function render() {
+          const hasPages = pages.length > 0;
+          dropzone.style.display = hasPages ? "none" : "";
+          grid.style.display = hasPages ? "flex" : "none";
+          $("settings-bar").classList.toggle("visible", hasPages);
+          $("src-legend").classList.toggle("visible", hasPages);
+          $("btn-reset").style.display = hasPages ? "" : "none";
+          $("btn-convert").disabled = !hasPages;
+          $("hd-stat").style.display = hasPages ? "" : "none";
+
+          if (!hasPages) {
+            $("btn-dl-all").style.display = "none";
+          }
+
+          // Legend
+          const legend = $("src-legend");
+          legend.innerHTML = '<span class="src-legend-label">ソース</span>';
+          for (const src of sources) {
+            if (!pages.find((p) => p.srcId === src.id)) continue;
+            const c = SRC_COLORS[src.colorIdx];
+            const pill = document.createElement("span");
+            pill.className = "src-pill";
+            pill.style.cssText = `background:${c.bg};border-color:${c.border};color:${c.text}`;
+            pill.innerHTML = `<span class="src-dot" style="background:${c.dot}"></span>${src.name}`;
+            legend.appendChild(pill);
+          }
+
+          updateHeader();
+
+          // Cards
+          grid.innerHTML = "";
+          for (const page of pages) {
+            grid.appendChild(makeCard(page));
+          }
+        }
+
+        function updateHeader() {
+          const done = pages.filter((p) => p.status === "done").length;
+          $("hd-stat").textContent = `${done} / ${pages.length} ページ変換済み`;
+        }
+
+        function updateCard(page) {
+          const existing = root.querySelector(`[data-id="${page.id}"]`);
+          if (existing) {
+            const parent = existing.parentNode;
+            parent.replaceChild(makeCard(page), existing);
+          }
+          updateHeader();
+        }
+
+        function makeCard(page) {
+          const src = sources.find((s) => s.id === page.srcId);
+          const c = src ? SRC_COLORS[src.colorIdx] : SRC_COLORS[0];
+
+          const wrap = document.createElement("div");
+          wrap.className = "card-wrap";
+
+          const card = document.createElement("div");
+          card.className =
+            "card" +
+            (page.status === "converting"
+              ? " converting"
+              : page.status === "done"
+                ? " done"
+                : page.status === "error"
+                  ? " error"
+                  : "");
+          card.dataset.id = page.id;
+
+          // Source strip
+          const strip = document.createElement("div");
+          strip.className = "card-src-strip";
+          strip.style.background = c.dot;
+          card.appendChild(strip);
+
+          // Thumb
+          const thumb = document.createElement("div");
+          thumb.className = "card-thumb";
+          if (page.canvas) {
+            const cloned = page.canvas.cloneNode(true);
+            // Copy canvas pixels
+            const ctx = cloned.getContext("2d");
+            ctx.drawImage(page.canvas, 0, 0);
+            thumb.appendChild(cloned);
+          }
+
+          // Hover overlay
+          const overlay = document.createElement("div");
+          overlay.className = "card-overlay";
+
+          if (page.status === "done") {
+            const dlBtn = document.createElement("button");
+            dlBtn.className = "ov-btn";
+            dlBtn.title = "ダウンロード";
+            dlBtn.textContent = "↓";
+            dlBtn.onclick = () => downloadPage(page);
+            overlay.appendChild(dlBtn);
+          }
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "ov-btn del";
+          delBtn.title = "削除";
+          delBtn.textContent = "✕";
+          delBtn.onclick = () => {
+            pages = pages.filter((p) => p.id !== page.id);
+            if (!pages.find((p) => p.srcId === page.srcId)) {
+              sources = sources.filter((s) => s.id !== page.srcId);
+            }
+            render();
+            showToast("ページを削除しました");
+          };
+          overlay.appendChild(delBtn);
+          thumb.appendChild(overlay);
+
+          // Page number badge
+          const numBadge = document.createElement("div");
+          numBadge.className = "page-num-badge";
+          numBadge.textContent = `p.${page.pageIndex}`;
+          thumb.appendChild(numBadge);
+
+          // Status badge
+          if (page.status !== "pending") {
+            const statusBadge = document.createElement("div");
+            statusBadge.className = `status-badge ${page.status}`;
+            statusBadge.textContent =
+              page.status === "done" ? "✓ 完了" : page.status === "converting" ? "変換中" : "✕ エラー";
+            thumb.appendChild(statusBadge);
+          }
+
+          card.appendChild(thumb);
+
+          // Footer
+          const foot = document.createElement("div");
+          foot.className = "card-foot";
+          const label = document.createElement("span");
+          label.className = "card-label";
+          label.title = page.label;
+          label.textContent = page.label;
+          foot.appendChild(label);
+
+          const dlBtn2 = document.createElement("button");
+          dlBtn2.className = "card-dl-btn";
+          dlBtn2.title = page.status === "done" ? "ダウンロード" : "未変換";
+          dlBtn2.textContent = "↓";
+          dlBtn2.disabled = page.status !== "done";
+          dlBtn2.onclick = () => downloadPage(page);
+          foot.appendChild(dlBtn2);
+          card.appendChild(foot);
+
+          wrap.appendChild(card);
+          return wrap;
+        }
+
+        // ── Settings ──
+        root.querySelectorAll(".fmt-btn").forEach((btn) => {
+          btn.onclick = () => {
+            root.querySelectorAll(".fmt-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            fmt = btn.dataset.fmt;
+            // PNG doesn't need quality
+            $("quality-label").style.opacity = fmt === "png" ? ".3" : "1";
+            $("quality-slider").disabled = fmt === "png";
+            // Reset converted status so user re-converts with new format
+            pages.forEach((p) => {
+              if (p.status === "done") {
+                p.status = "pending";
+                p.imageBlob = null;
+              }
+            });
+            $("btn-dl-all").style.display = "none";
+            render();
+            showToast(`形式を ${fmt.toUpperCase()} に変更しました（再変換が必要です）`);
+          };
+        });
+
+        root.querySelectorAll(".dpi-btn").forEach((btn) => {
+          btn.onclick = () => {
+            root.querySelectorAll(".dpi-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            scale = parseInt(btn.dataset.scale);
+            pages.forEach((p) => {
+              if (p.status === "done") {
+                p.status = "pending";
+                p.imageBlob = null;
+              }
+            });
+            $("btn-dl-all").style.display = "none";
+            render();
+            showToast(`解像度を ${btn.textContent} に変更しました（再変換が必要です）`);
+          };
+        });
+
+        $("quality-slider").oninput = (e) => {
+          quality = e.target.value / 100;
+          $("quality-val").textContent = e.target.value;
+        };
+
+        // ── Event wiring ──
+        $("btn-add").onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+          loadFiles(e.target.files);
+          e.target.value = "";
+        };
+
+        bindFileDrop({ main: $("main"), dropzone, fileInput, onFiles: loadFiles, hasPages: () => pages.length > 0 });
+
+        $("btn-convert").onclick = convertAll;
+
+        $("btn-dl-all").onclick = () => buildZip();
+
+        $("btn-zip-dl").onclick = () => {
+          if (!zipBlob) return;
+          const url = URL.createObjectURL(zipBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `images_${fmt}.zip`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          $("modal-zip").classList.remove("visible");
+          showToast("ZIPをダウンロードしました");
+        };
+
+        $("btn-zip-cancel").onclick = () => {
+          zipCancelled = true;
+          $("modal-zip").classList.remove("visible");
+        };
+        $("modal-zip").addEventListener("click", (e) => {
+          if (e.target === $("modal-zip")) {
+            zipCancelled = true;
+            $("modal-zip").classList.remove("visible");
+          }
+        });
+
+        $("btn-reset").onclick = () => $("modal-reset").classList.add("visible");
+        $("btn-reset-cancel").onclick = () => $("modal-reset").classList.remove("visible");
+        $("btn-reset-confirm").onclick = () => {
+          pages = [];
+          sources = [];
+          colorCounter = 0;
+          zipBlob = null;
+          $("modal-reset").classList.remove("visible");
+          $("btn-dl-all").style.display = "none";
+          showToast("リセットしました");
+          render();
+        };
+
+        // Initial render
+        render();
+      })();
+
+      // ════════ タブ切り替え ════════
+      const tabButtons = document.querySelectorAll(".app-tab");
+      const panels = document.querySelectorAll(".panel");
+      function showTab(name) {
+        tabButtons.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+        panels.forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+        history.replaceState(null, "", "#" + name);
+      }
+      tabButtons.forEach((t) => {
+        t.onclick = () => showTab(t.dataset.tab);
+      });
+      showTab(location.hash === "#image" ? "image" : "editor");
+    </script>
+  </body>
+</html>
