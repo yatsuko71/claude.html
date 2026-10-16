@@ -1,946 +1,1289 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>問題×解答 完全文生成ツール</title>
-<style>
-  :root{
-    --bg:#f6f5f2;
-    --panel:#ffffff;
-    --ink:#2b2a28;
-    --sub:#6b6a66;
-    --accent:#a8613f;
-    --accent-dark:#8a4d31;
-    --line:#e3e0da;
-    --warn:#b5482a;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:"Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    padding:24px;
-  }
-  h1{
-    font-size:20px;
-    margin:0 0 4px;
-    letter-spacing:0.02em;
-  }
-  .lead{
-    color:var(--sub);
-    font-size:13px;
-    margin:0 0 20px;
-    line-height:1.6;
-  }
-  .grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
-  }
-  @media (max-width:860px){
-    .grid{grid-template-columns:1fr;}
-  }
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:14px;
-    display:flex;
-    flex-direction:column;
-  }
-  .panel label{
-    font-size:13px;
-    font-weight:600;
-    margin-bottom:6px;
-    color:var(--accent-dark);
-  }
-  textarea{
-    width:100%;
-    min-height:260px;
-    resize:vertical;
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:10px;
-    font-family:ui-monospace,Menlo,Consolas,monospace;
-    font-size:12.5px;
-    line-height:1.6;
-    background:#fdfcfa;
-    color:var(--ink);
-  }
-  .btnrow{
-    display:flex;
-    gap:10px;
-    margin:18px 0;
-    flex-wrap:wrap;
-  }
-  button{
-    border:none;
-    border-radius:8px;
-    padding:10px 18px;
-    font-size:14px;
-    cursor:pointer;
-    font-weight:600;
-    transition:transform 0.05s ease, opacity 0.15s ease;
-  }
-  button:active{transform:scale(0.97);}
-  .primary{
-    background:var(--accent);
-    color:#fff;
-  }
-  .primary:hover{background:var(--accent-dark);}
-  .ghost{
-    background:transparent;
-    border:1px solid var(--line);
-    color:var(--ink);
-  }
-  .ghost:hover{background:#eeece7;}
-  .output-panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:14px;
-  }
-  .output-panel label{
-    font-size:13px;
-    font-weight:600;
-    margin-bottom:6px;
-    color:var(--accent-dark);
-    display:block;
-  }
-  #output{
-    min-height:340px;
-    font-family:ui-monospace,Menlo,Consolas,monospace;
-    font-size:13px;
-    line-height:1.8;
-    white-space:pre-wrap;
-  }
-  .status{
-    font-size:12.5px;
-    margin-top:8px;
-    color:var(--sub);
-    min-height:18px;
-  }
-  .status.warn{color:var(--warn);}
-  .note{
-    font-size:12px;
-    color:var(--sub);
-    margin-top:6px;
-    line-height:1.6;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>問題×解答 完全文生成ツール</title>
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --panel: #ffffff;
+      --ink: #2b2a28;
+      --sub: #6b6a66;
+      --accent: #a8613f;
+      --accent-dark: #8a4d31;
+      --line: #e3e0da;
+      --warn: #b5482a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Hiragino Sans", "Yu Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      margin: 0 0 20px;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .warn-mark {
+      color: var(--warn);
+    }
+
+    /* ---- パネル（入力 2 枚＋出力 1 枚で共通） ---- */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .panel label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-dark);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid .panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fdfcfa;
+      color: var(--ink);
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+
+    #output {
+      min-height: 340px;
+      font-size: 13px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    /* ---- ボタン ---- */
+    .btnrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.05s ease, opacity 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .ghost:hover {
+      background: #eeece7;
+    }
+
+    /* ---- ステータス・注記 ---- */
+    .status {
+      min-height: 18px;
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--sub);
+    }
+
+    .status.warn {
+      color: var(--warn);
+    }
+
+    .note {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--sub);
+    }
+  </style>
 </head>
 <body>
 
-<h1>問題 × 解答 → 完全文＋和訳 生成ツール</h1>
-<p class="lead">
-  左に問題文、右に解答（解説・訳を含む）をそのまま貼り付けて「生成」を押すと、
-  空所補充・語順整序・和文英訳などの問題を「完成英文；和訳」の形にまとめます。
-  プリント形式（①②③…の大問）と、教材形式（STEP／FRAME／EXERCISE A〜D、選択肢①〜④が問題文中にあるもの）を自動判定します。
-  自動解析が難しい行は <span style="color:var(--warn)">⚠️</span> マークが付くので、下の出力欄で直接修正できます。
-</p>
+  <h1>問題 × 解答 → 完全文＋和訳 生成ツール</h1>
+  <p class="lead">
+    左に問題文、右に解答（解説・訳を含む）をそのまま貼り付けて「生成」を押すと、
+    空所補充・語順整序・和文英訳などの問題を「完成英文；和訳」の形にまとめます。<br>
+    プリント形式（①②③…の大問）と、教材形式（STEP／FRAME／EXERCISE A〜D、選択肢①〜④が問題文中にあるもの）を自動判定します。
+    自動解析が難しい行は <span class="warn-mark">⚠️</span> マークが付くので、下の出力欄で直接修正できます。
+  </p>
 
-<div class="grid">
-  <div class="panel">
-    <label for="problemInput">問題（貼り付け）</label>
-    <textarea id="problemInput" placeholder="ここに問題文を貼り付け"></textarea>
+  <div class="grid">
+    <div class="panel">
+      <label for="problemInput">問題（貼り付け）</label>
+      <textarea id="problemInput" placeholder="ここに問題文を貼り付け"></textarea>
+    </div>
+    <div class="panel">
+      <label for="answerInput">解答（解説・訳を含めてそのまま貼り付け）</label>
+      <textarea id="answerInput" placeholder="ここに解答文を貼り付け"></textarea>
+    </div>
   </div>
-  <div class="panel">
-    <label for="answerInput">解答（解説・訳を含めてそのまま貼り付け）</label>
-    <textarea id="answerInput" placeholder="ここに解答文を貼り付け"></textarea>
+
+  <div class="btnrow">
+    <button class="primary" onclick="generate()">生成する</button>
+    <button class="ghost" onclick="loadSample()">サンプル（プリント形式）</button>
+    <button class="ghost" onclick="loadSampleTextbook()">サンプル（STEP/FRAME形式）</button>
+    <button class="ghost" onclick="clearAll()">クリア</button>
+    <button class="ghost" onclick="copyOutput()">出力をコピー</button>
+    <button class="ghost" onclick="downloadOutput()">.txt でダウンロード</button>
   </div>
-</div>
 
-<div class="btnrow">
-  <button class="primary" onclick="generate()">生成する</button>
-  <button class="ghost" onclick="loadSample()">サンプル（プリント形式）</button>
-  <button class="ghost" onclick="loadSampleTB()">サンプル（STEP/FRAME形式）</button>
-  <button class="ghost" onclick="clearAll()">クリア</button>
-  <button class="ghost" onclick="copyOutput()">出力をコピー</button>
-  <button class="ghost" onclick="downloadOutput()">.txt でダウンロード</button>
-</div>
+  <div class="panel">
+    <label for="output">出力（自由に編集できます）</label>
+    <textarea id="output" placeholder="ここに結果が表示されます"></textarea>
+    <div class="status" id="status"></div>
+    <p class="note">
+      形式: 「①」などの見出し行の下に「番号)　完成した英文; 和訳」が並びます。
+      自動判定できなかった箇所は ⚠️ を目印に手直ししてください。
+    </p>
+  </div>
 
-<div class="output-panel">
-  <label for="output">出力（自由に編集できます）</label>
-  <textarea id="output" placeholder="ここに結果が表示されます"></textarea>
-  <div class="status" id="status"></div>
-  <p class="note">形式: 「①」などの見出し行の下に「番号)　完成した英文; 和訳」が並びます。自動判定できなかった箇所は ⚠️ を目印に手直ししてください。</p>
-</div>
-
-<script>
-const SAMPLE_PROBLEM = `Lesson 17　分詞(1)                 　　 年　　 組　　 番　　　　　　　　　　　　　　　
- 
-① Complete the sentences.  Put the verb in the correct form.                                            →１-1
-1)　Emily is the girl (　　　　　　) in the front row.                                                        ［sit］
-2)　Takuya bought a tie (　　　　　　) in Italy from an online store.                         ［make］
-3)　Don't touch that (　　　　　　) window.                                                                ［break］
-4)　Our research has shown some (　　　　　　) results.                                      ［surprise］
-
-② Complete the sentences.  Put the verb in the correct form.                                            →１-2
-1)　I am sorry to have kept you (　　　　　　).  My bus was delayed.                        ［wait］
-2)　The movie was (　　　　　　), but I was (　　　　　　) with the ending.
-［excite, disappoint］
-3)　When I passed by her room, I heard her (　　　　　　).                                         ［sing］
-4)　I went (　　　　　　) in the mountains during the summer vacation.                  ［camp］
-5)　The air conditioner is not working properly.  We need to have it (　　　　　　).
-［repair］
- 
-③ Put the words in the correct order.
-1)　このノートは再生紙でできている。　(paper, is, recycled, made of)
-This notebook                                                                                                                        .
-2)　生徒たちは集合場所まで走ってやってきた。　(running, came, to, the students)
-                                                                                                                  the meeting place.
-3)　最上川は山形県を流れる一級河川です。                                       「一級河川」Class A river
-(flowing, Yamagata, is, a Class A river, through)
-The Mogami River                                                                                                                 .
-4)　英語で自分の言いたいことを伝えるのは難しい。　(make, understood, to, myself, difficult)
-It is                                                                                                                      in English.
-5)　髪，切った？似合ってるよ。　(cut, have, hair, your, you)
-Did                                                                                                                 ?  It suits you!
-
-④Put the Japanese sentences into English.
-1)　私たちは，明日のコンサートにとても興奮しています。
-                                                                                                             the concert tomorrow.
-2)　私は写真スタジオで自分の写真を撮ってもらった。
-I                                                                                                                 at a photo studio.
-3)　ステージでギターを弾いている男の子は，私のクラスメートです。
-The boy                                                                                                       is my classmate.
-4)　水を出しっぱなしにしてはいけません。                                                     （「流れる」run）
-                                                                                                                                               
-
-[Give It a Try!]
-Look at the picture and complete the sentences.
+  <script>
+    /* =====================================================================
+     * 問題 × 解答 → 完全文＋和訳 生成ツール
+     *
+     * 構成
+     *   1. 定数・サンプルデータ
+     *   2. 画面操作（読み込み／クリア／コピー／ダウンロード／ステータス）
+     *   3. 共通の文字列ユーティリティ
+     *   4. プリント形式（①②③…の大問）の解析と生成
+     *   5. 教材形式（STEP／FRAME／EXERCISE A〜D）の解析と生成
+     *   6. generate()：入力形式を判定して 4 か 5 に振り分ける
+     * ===================================================================== */
 
 
-サンドイッチ：sandwich
-おにぎり：rice ball
-噴水：fountain
-例) The girl sitting on the edge of the fountain is Aoi.
-1)　                                                                                                                                is Hiroki.
-2)　                                                                                                                                   is Rika.`;
+    /* ---------------------------------------------------------------------
+     * 1. 定数・サンプルデータ
+     * ------------------------------------------------------------------- */
 
-const SAMPLE_ANSWER = `Lesson 17　分詞(1)
-EXERCISES　解答
+    // ①〜⑳（プリント形式の大問見出しの検出に使う）
+    const CIRCLED_DIGITS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
 
-①
-1) sitting　　2) made　　3) broken　　4) surprising
+    // 空所を検出したあと、文中で目印として使うトークン
+    const BLANK_TOKEN = '@@BLANK@@';
+    const BLANK_RE = /@@BLANK@@/g;
 
-解説
-修飾される名詞と分詞が，能動の関係なら現在分詞，受動の関係なら過去分詞にする。
+    // ひらがな・カタカナ・漢字
+    const JP_CHAR_RE = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
+    // 脚注（「天才」のような語注）の切り落とし用。「」もカバーする
+    const FOOTNOTE_MARK_RE = /[「」\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
 
-訳
-1) エミリーはいちばん前の列に座っている女の子だ。　2) タクヤはイタリア製のネクタイをオンラインショップで買った。　3) その割れた窓に触らないで。　4) 私たちの研究では，驚くべき結果が出た。
+    const SAMPLE_WORKSHEET_PROBLEM = [
+      "Lesson 17　分詞(1)                 　　 年　　 組　　 番　　　　　　　　　　　　　　　",
+      " ",
+      "① Complete the sentences.  Put the verb in the correct form.                                            →１-1",
+      "1)　Emily is the girl (　　　　　　) in the front row.                                                        ［sit］",
+      "2)　Takuya bought a tie (　　　　　　) in Italy from an online store.                         ［make］",
+      "3)　Don't touch that (　　　　　　) window.                                                                ［break］",
+      "4)　Our research has shown some (　　　　　　) results.                                      ［surprise］",
+      "",
+      "② Complete the sentences.  Put the verb in the correct form.                                            →１-2",
+      "1)　I am sorry to have kept you (　　　　　　).  My bus was delayed.                        ［wait］",
+      "2)　The movie was (　　　　　　), but I was (　　　　　　) with the ending.",
+      "［excite, disappoint］",
+      "3)　When I passed by her room, I heard her (　　　　　　).                                         ［sing］",
+      "4)　I went (　　　　　　) in the mountains during the summer vacation.                  ［camp］",
+      "5)　The air conditioner is not working properly.  We need to have it (　　　　　　).",
+      "［repair］",
+      " ",
+      "③ Put the words in the correct order.",
+      "1)　このノートは再生紙でできている。　(paper, is, recycled, made of)",
+      "This notebook                                                                                                                        .",
+      "2)　生徒たちは集合場所まで走ってやってきた。　(running, came, to, the students)",
+      "                                                                                                                  the meeting place.",
+      "3)　最上川は山形県を流れる一級河川です。                                       「一級河川」Class A river",
+      "(flowing, Yamagata, is, a Class A river, through)",
+      "The Mogami River                                                                                                                 .",
+      "4)　英語で自分の言いたいことを伝えるのは難しい。　(make, understood, to, myself, difficult)",
+      "It is                                                                                                                      in English.",
+      "5)　髪，切った？似合ってるよ。　(cut, have, hair, your, you)",
+      "Did                                                                                                                 ?  It suits you!",
+      "",
+      "④Put the Japanese sentences into English.",
+      "1)　私たちは，明日のコンサートにとても興奮しています。",
+      "                                                                                                             the concert tomorrow.",
+      "2)　私は写真スタジオで自分の写真を撮ってもらった。",
+      "I                                                                                                                 at a photo studio.",
+      "3)　ステージでギターを弾いている男の子は，私のクラスメートです。",
+      "The boy                                                                                                       is my classmate.",
+      "4)　水を出しっぱなしにしてはいけません。                                                     （「流れる」run）",
+      "                                                                                                                                               ",
+      "",
+      "[Give It a Try!]",
+      "Look at the picture and complete the sentences.",
+      "",
+      "",
+      "サンドイッチ：sandwich",
+      "おにぎり：rice ball",
+      "噴水：fountain",
+      "例) The girl sitting on the edge of the fountain is Aoi.",
+      "1)　                                                                                                                                is Hiroki.",
+      "2)　                                                                                                                                   is Rika."
+    ].join('\n');
 
-②
-1) waiting　　2) exciting，disappointed　　3) singing　　4) camping　　5) repaired
+    const SAMPLE_WORKSHEET_ANSWER = [
+      "Lesson 17　分詞(1)",
+      "EXERCISES　解答",
+      "",
+      "①",
+      "1) sitting　　2) made　　3) broken　　4) surprising",
+      "",
+      "解説",
+      "修飾される名詞と分詞が，能動の関係なら現在分詞，受動の関係なら過去分詞にする。",
+      "",
+      "訳",
+      "1) エミリーはいちばん前の列に座っている女の子だ。　2) タクヤはイタリア製のネクタイをオンラインショップで買った。　3) その割れた窓に触らないで。　4) 私たちの研究では，驚くべき結果が出た。",
+      "",
+      "②",
+      "1) waiting　　2) exciting，disappointed　　3) singing　　4) camping　　5) repaired",
+      "",
+      "解説",
+      "省略",
+      "",
+      "訳",
+      "1) 待たせてごめんなさい。バスが遅れてしまって。　2) その映画にはわくわくした（映画はわくわくするものだった）が，結末にはがっかりした。　3) 彼女の部屋の前を通り過ぎるときに，彼女が歌っているのが聞こえた。　4) 夏休みに山へキャンプに行った。　5) エアコンがちゃんと動かない。修理してもらわないと。",
+      "",
+      "③",
+      "1) This notebook (is made of recycled paper).",
+      "2) (The students came running to) the meeting place.",
+      "3) The Mogami River (is a Class A river flowing through Yamagata).",
+      "4) It is (difficult to make myself understood) in English.",
+      "5) Did (you have your hair cut)?",
+      "",
+      "解説",
+      "省略",
+      "",
+      "④",
+      "1) We're[We are] very excited about (the concert tomorrow.)",
+      "2) (I) had[got] my picture[photo / photograph] taken (at a photo studio.)",
+      "3) (The boy) playing the guitar on the stage (is my classmate.)",
+      "4) Don't[You shouldn't / should not] leave the water running.",
+      "",
+      "解説",
+      "省略",
+      "",
+      "[Give It a Try!]（解答例）",
+      "1) The boy eating[having] a sandwich (under the tree) (is Hiroki.)",
+      "2) The girl running near[in front of / around] the fountain (is Rika.)",
+      "",
+      "訳",
+      "例) 噴水の端に座っている女の子がアオイだ。　1) （木の下で）サンドイッチを食べている男の子がヒロキだ。　2) 噴水の近く［前 / 周り］を走っている女の子がリカだ。"
+    ].join('\n');
 
-解説
-省略
+    const SAMPLE_TEXTBOOK_PROBLEM = [
+      "STEP 08: 動詞の語法 Usage: Verbs",
+      "",
+      "",
+      "",
+      "Frames for This Chapter -この課のポイントを示す例題-",
+      "空所に入れるのに最も適切なものを選びなさい。",
+      "",
+      "FRAME 063\tI bought this T-shirt for my baby.  It feels so (　　　).",
+      "\t① like soft\t② soft\t③ softly\t④ to be softly\t〈近畿大〉",
+      "",
+      "FRAME 066\tWill you please explain (　　　) once again?",
+      "\t① the point us\t② us the point\t③ the point to us\t④ us about the point\t〈東京工芸大〉",
+      "",
+      "FRAME 069\tSmoking robbed him (　　　) his health.",
+      "",
+      "\t① to\t② of\t③ with \t④ for\t〈亜細亜大〉",
+      "",
+      "FRAME 072\tShe had her hair (　　　) for the dance.",
+      "\t① to be cut\t② cutting\t③ to cut\t④ cut\t〈法政大〉",
+      "",
+      "",
+      "",
+      "EXERCISE A >>\t空所に入れるのに最も適切なものを選びなさい。",
+      "",
+      "□ 01\tDon’t climb up that ladder!  It doesn’t look (　　　).",
+      "\t① safe\t② safely\t③ in safety\t④ dangerously\t〈福岡大〉",
+      "",
+      "□ 10\tThe pilot (　　　) the landing was delayed.",
+      "\t① explained to us what\t② explained us why\t③ explained to us why\t④ explained us of why\t〈同志社大〉",
+      "",
+      "□ 20\tThe number of cases of the disease continued to (　　　).",
+      "\t① raise\t②rise\t③ raising\t④ rising\t〈亜細亜大〉",
+      "",
+      "",
+      "",
+      "EXERCISE B >>\t英文には誤りが1箇所ずつある。番号を指摘し，正しく直しなさい。",
+      "",
+      "□ 01\t①After ②attending the meeting yesterday, he ③seriously ④talked the issue.\t〈明海大〉",
+      "",
+      "□ 02\tThe rays ①from the sun penetrate the atmosphere, ②while the ③greenhouse gases prevent heat ④to escape into space.\t〈関西学院大〉",
+      "",
+      "□ 03\tThe author is going to ①discuss to the implications of mobile Internet access for libraries, ②which would allow innovation in ③their ④services.\t〈明治学院大〉",
+      "",
+      "",
+      "",
+      "EXERCISE C >>\t（　　）内の語句を並べかえて英文を完成させなさい。",
+      "",
+      "□ 01\tあなたの話を聞いて，数年前に私にも同じようなことがあったのを思い出した。\tYour ( happened / of / reminded / similar / story / which / something / me ) to me a few years ago.\t〈東洋大〉",
+      "",
+      "□ 02\t彼女は急用ができて，昨日は福岡に出張することができなかった。［1語不要］\t( couldn’t / going / business / on / prevented / urgent / from / her ) a business trip to Fukuoka yesterday.\t〈福岡大〉",
+      "",
+      "□ 03\tMy younger brother ( cut / hair / having / his / hates ) short.\t〈愛知大〉",
+      "",
+      "",
+      "",
+      " STEP 09: イディオム［動詞関連］ Idioms: Verbs",
+      "",
+      "",
+      "",
+      "EXERCISE A >>\t空所に入れるのに最も適切なものを選びなさい。",
+      "",
+      "□ 12\t“Can you tell a crocodile (　　　) an alligator?”  “No, I can’t.  How are they different?”",
+      "\t① and\t② between\t③ from\t④ to\t〈大妻女子大〉",
+      "",
+      "□ 22\tA: When will we reach the next gas station?  B: In another hour.  A: Oh no!  We are (　　　) of fuel.",
+      "\t① decreasing\t② running out\t③ shorting out\t④ increasing\t〈中央大〉",
+      "",
+      "",
+      "",
+      "EXERCISE B >>\t下線部の意味に最も近いものを選びなさい。",
+      "",
+      "□ 01\tThe game has been put off due to the bad weather.",
+      "\t① cancelled\t② expected\t③ announced\t④ postponed\t〈関西外国語大〉",
+      "",
+      "",
+      "",
+      "EXERCISE C >>\t英文には誤りが1箇所ずつある。番号を指摘し，正しく直しなさい。",
+      "",
+      "□ 01\tKeep ①on mind that you should ②enclose a recent passport-sized photograph ③of yourself  for ④the application.\t〈甲南大〉",
+      "",
+      "□ 03\tTo apply ①to a passport, you have to ②fill out the application form, attach two ③recent photos, and ④take it to the local passport office.\t〈南山大〉",
+      "",
+      "□ 05\t①Why don’t you ②look to the word in the dictionary and ③tell us what it ④means?\t〈京都外国語大〉",
+      "",
+      "",
+      "",
+      "EXERCISE D >>\t（　　）内の語句を並べかえて英文を完成させなさい。",
+      "",
+      "□ 01\t彼は仕事中にタバコを吸わないことにしている。",
+      "\tHe ( it / smoke / makes / a rule / not / to ) while working.\t〈四天王寺大〉",
+      "",
+      "□ 08\tThank you for ( off / coming / see / me / to ).\t〈関東学院大〉",
+      "",
+      "□ 09\tBen is a kind and generous man.  He still ( most / touch / keeps / with / in ) of his old friends.\t〈愛知大〉",
+      ""
+    ].join('\n');
 
-訳
-1) 待たせてごめんなさい。バスが遅れてしまって。　2) その映画にはわくわくした（映画はわくわくするものだった）が，結末にはがっかりした。　3) 彼女の部屋の前を通り過ぎるときに，彼女が歌っているのが聞こえた。　4) 夏休みに山へキャンプに行った。　5) エアコンがちゃんと動かない。修理してもらわないと。
+    const SAMPLE_TEXTBOOK_ANSWER = [
+      "■STEP 08: 動詞の語法（pp.27～30）",
+      "FRAME 063 ② 　 私は私の赤ちゃんのためにこのTシャツを買った。それは手触りがとても柔らかい。",
+      "　 feelは形容詞を補語にとり「…の感じがする」という意味を表すので，②softを選ぶ。",
+      "FRAME 066 ③ 　 もう1度要点を私たちに説明してくださいませんか。",
+      "　 explain A to Bで「AのことをBに説明する」という意味になるので，③the point to usを選ぶ。explainの直後に〈人〉はこないことに注意。",
+      "FRAME 069 ② 　 喫煙は彼から健康を奪った。",
+      "　 rob A of Bで「AからBを奪う」という意味を表すので，②ofを選ぶ。",
+      "FRAME 072 ④ 　 彼女はダンスパーティーのために髪を切ってもらった。",
+      "　 hadは使役動詞。〈have＋O＋done〉で「Oを…してもらう，される」という意味を表すので，④cutを選ぶ。",
+      "",
+      "EXERCISE A >>",
+      "01 ① 　 そのはしごを上がってはだめだ！ 安全なようには見えない。",
+      "　 lookは形容詞を補語にとり「…に見える」という意味を表すので，①safeを選ぶ。",
+      "10 ③ 　 パイロットはなぜ着陸が遅れたのかを私たちに説明した。",
+      "　 explain to O that［why］ ... で「that［why］以下のことをOに説明する」という意味になるので，③explained to us whyを選ぶ。空所のあとはS(the landing)＋V(was delayed)と完全な文になっているので，whatを用いた①は不可。",
+      "20 ② 　 その病気の症例数は増え続けた。",
+      "　 目的語がなく，toに続く不定詞なので自動詞② riseを選ぶ。自動詞riseと他動詞raiseで活用と意味が紛らわしいので，注意が必要。",
+      "",
+      "EXERCISE B >>",
+      "01 ④ talked ➡ talked about",
+      "　 昨日の会議に出席したあと，彼はその問題について真剣に話した。",
+      "　 talkは自動詞なので，直後に目的語をとることができない。「～について話した」という意味になるように，④talkedをtalked aboutにする。",
+      "02 ④ to escape ➡ from escaping",
+      "　 太陽からの光線は大気中を通り抜けるが，一方，温室効果ガスは熱が宇宙空間に流出するのを妨げる。",
+      "　 prevent O from doingで「Oが…するのを妨げる」という意味を表すので，④to escapeはfrom escapingにする。",
+      "03 ① discuss to ➡ discuss",
+      "　 筆者は図書館におけるインターネットモバイル接続がもつ意味合いについてこれから論じるが，それは図書館のサービスに革新をもたらすだろうものである。",
+      "　 discussは「～について議論する」という意味の他動詞であり，目的語の前に前置詞は必要ないので，①discuss toはdiscussにする。",
+      "",
+      "",
+      " EXERCISE C >>",
+      "01 Your story reminded me of something similar which happened to me a few years ago.",
+      "　「 あなたの話は私に～を思い出させた」と考える。remind A of Bが「AにBを思い出させる」という意味なので，Your story reminded me of とする。「同じようなこと」はsomethingsimilarとし，関係代名詞whichを用いた節which happened to me ...を続ける。",
+      "02 Urgent business prevented her from going on a business trip to Fukuoka yesterday.（couldn’tが不要）",
+      "　「 急用は彼女が～に出張することを妨げた」と考える。prevent O from doingで「Oが…するのを妨げる」という意味を表すので，Urgent business prevented her from going と",
+      "つなげる。「出張する」はgo on a business trip。",
+      "03 My younger brother hates having his hair cut short.",
+      "　 私の弟は髪を短く切ってもらうのをいやがる。",
+      "　 hate doingで「…するのをいやがる」という意味になるので，まずhates havingとする。〈have＋O＋done〉で「Oを…してもらう，される」という意味を表すので，having his hair cutとつなげる。",
+      "",
+      " ■STEP 09: イディオム［動詞関連］（pp.31～35）",
+      "EXERCISE A >>",
+      "12 ③ 　「 クロコダイルとアリゲーターを見分けられますか」",
+      "「いいえ，できません。どのように違うのですか」",
+      "　 tell A from B「AとBとを見分ける」",
+      "22 ② 　 A:「 次のガソリンスタンドにはいつ到着しますか」",
+      "B:「 1時間後です」",
+      "A:「 ああ！ 燃料が切れる」",
+      "　 run out of「 ～を使い果たす」",
+      "",
+      "EXERCISE B >>",
+      "01 ④ 　 試合は悪天候のために延期された。",
+      "　 put off「延期する」（＝postpone）",
+      "",
+      "EXERCISE C >>",
+      "01 ① on mind ➡ in mind",
+      "　 応募にはパスポートサイズのあなたご自身の最近の写真を同封するように心に留めておいてください。",
+      "　 keep in mind「心に留めておく」",
+      "03 ① to ➡ for",
+      "　 パスポートを申請するためには，申込書に記入し，最近の写真を2枚添付し，それを地元の旅券事務所に持って行かなければならない。",
+      "　 apply for「申し込む／申請する」",
+      "05 ② look to the word ➡ look up the word",
+      "　 その語を辞書で調べて，それがどんな意味か私たちに教えてくれませんか。",
+      "　 look up「調べる」",
+      "",
+      "EXERCISE D >>",
+      "01 He makes it a rule not to smoke while working.",
+      "　 make it a rule to do「…することにしている」",
+      "08 Thank you for coming to see me off.",
+      "　 私を見送りに来てくれてありがとう。",
+      "　 see O off「（Oを）見送る」",
+      "09 Ben is a kind and generous man. He still keeps in touch with most of his old friends.",
+      "　 ベンは親切で寛大な人だ。彼はまだ昔の友人のほとんどと連絡をとり合っている。",
+      "　 keep in touch with「連絡をとり合う」",
+      ""
+    ].join('\n');
 
-③
-1) This notebook (is made of recycled paper).
-2) (The students came running to) the meeting place.
-3) The Mogami River (is a Class A river flowing through Yamagata).
-4) It is (difficult to make myself understood) in English.
-5) Did (you have your hair cut)?
 
-解説
-省略
+    /* ---------------------------------------------------------------------
+     * 2. 画面操作
+     * ------------------------------------------------------------------- */
 
-④
-1) We're[We are] very excited about (the concert tomorrow.)
-2) (I) had[got] my picture[photo / photograph] taken (at a photo studio.)
-3) (The boy) playing the guitar on the stage (is my classmate.)
-4) Don't[You shouldn't / should not] leave the water running.
-
-解説
-省略
-
-[Give It a Try!]（解答例）
-1) The boy eating[having] a sandwich (under the tree) (is Hiroki.)
-2) The girl running near[in front of / around] the fountain (is Rika.)
-
-訳
-例) 噴水の端に座っている女の子がアオイだ。　1) （木の下で）サンドイッチを食べている男の子がヒロキだ。　2) 噴水の近く［前 / 周り］を走っている女の子がリカだ。`;
-
-const SAMPLE_TB_PROBLEM = "STEP 08: 動詞の語法 Usage: Verbs\n\n\n\nFrames for This Chapter -この課のポイントを示す例題-\n空所に入れるのに最も適切なものを選びなさい。\n\nFRAME 063\tI bought this T-shirt for my baby.  It feels so (　　　).\n\t① like soft\t② soft\t③ softly\t④ to be softly\t〈近畿大〉\n\nFRAME 066\tWill you please explain (　　　) once again?\n\t① the point us\t② us the point\t③ the point to us\t④ us about the point\t〈東京工芸大〉\n\nFRAME 069\tSmoking robbed him (　　　) his health.\n\n\t① to\t② of\t③ with \t④ for\t〈亜細亜大〉\n\nFRAME 072\tShe had her hair (　　　) for the dance.\n\t① to be cut\t② cutting\t③ to cut\t④ cut\t〈法政大〉\n\n\n\nEXERCISE A >>\t空所に入れるのに最も適切なものを選びなさい。\n\n□ 01\tDon’t climb up that ladder!  It doesn’t look (　　　).\n\t① safe\t② safely\t③ in safety\t④ dangerously\t〈福岡大〉\n\n□ 10\tThe pilot (　　　) the landing was delayed.\n\t① explained to us what\t② explained us why\t③ explained to us why\t④ explained us of why\t〈同志社大〉\n\n□ 20\tThe number of cases of the disease continued to (　　　).\n\t① raise\t②rise\t③ raising\t④ rising\t〈亜細亜大〉\n\n\n\nEXERCISE B >>\t英文には誤りが1箇所ずつある。番号を指摘し，正しく直しなさい。\n\n□ 01\t①After ②attending the meeting yesterday, he ③seriously ④talked the issue.\t〈明海大〉\n\n□ 02\tThe rays ①from the sun penetrate the atmosphere, ②while the ③greenhouse gases prevent heat ④to escape into space.\t〈関西学院大〉\n\n□ 03\tThe author is going to ①discuss to the implications of mobile Internet access for libraries, ②which would allow innovation in ③their ④services.\t〈明治学院大〉\n\n\n\nEXERCISE C >>\t（　　）内の語句を並べかえて英文を完成させなさい。\n\n□ 01\tあなたの話を聞いて，数年前に私にも同じようなことがあったのを思い出した。\tYour ( happened / of / reminded / similar / story / which / something / me ) to me a few years ago.\t〈東洋大〉\n\n□ 02\t彼女は急用ができて，昨日は福岡に出張することができなかった。［1語不要］\t( couldn’t / going / business / on / prevented / urgent / from / her ) a business trip to Fukuoka yesterday.\t〈福岡大〉\n\n□ 03\tMy younger brother ( cut / hair / having / his / hates ) short.\t〈愛知大〉\n\n\n\n STEP 09: イディオム［動詞関連］ Idioms: Verbs\n\n\n\nEXERCISE A >>\t空所に入れるのに最も適切なものを選びなさい。\n\n□ 12\t“Can you tell a crocodile (　　　) an alligator?”  “No, I can’t.  How are they different?”\n\t① and\t② between\t③ from\t④ to\t〈大妻女子大〉\n\n□ 22\tA: When will we reach the next gas station?  B: In another hour.  A: Oh no!  We are (　　　) of fuel.\n\t① decreasing\t② running out\t③ shorting out\t④ increasing\t〈中央大〉\n\n\n\nEXERCISE B >>\t下線部の意味に最も近いものを選びなさい。\n\n□ 01\tThe game has been put off due to the bad weather.\n\t① cancelled\t② expected\t③ announced\t④ postponed\t〈関西外国語大〉\n\n\n\nEXERCISE C >>\t英文には誤りが1箇所ずつある。番号を指摘し，正しく直しなさい。\n\n□ 01\tKeep ①on mind that you should ②enclose a recent passport-sized photograph ③of yourself  for ④the application.\t〈甲南大〉\n\n□ 03\tTo apply ①to a passport, you have to ②fill out the application form, attach two ③recent photos, and ④take it to the local passport office.\t〈南山大〉\n\n□ 05\t①Why don’t you ②look to the word in the dictionary and ③tell us what it ④means?\t〈京都外国語大〉\n\n\n\nEXERCISE D >>\t（　　）内の語句を並べかえて英文を完成させなさい。\n\n□ 01\t彼は仕事中にタバコを吸わないことにしている。\n\tHe ( it / smoke / makes / a rule / not / to ) while working.\t〈四天王寺大〉\n\n□ 08\tThank you for ( off / coming / see / me / to ).\t〈関東学院大〉\n\n□ 09\tBen is a kind and generous man.  He still ( most / touch / keeps / with / in ) of his old friends.\t〈愛知大〉\n";
-const SAMPLE_TB_ANSWER = "■STEP 08: 動詞の語法（pp.27～30）\nFRAME 063 ② 　 私は私の赤ちゃんのためにこのTシャツを買った。それは手触りがとても柔らかい。\n　 feelは形容詞を補語にとり「…の感じがする」という意味を表すので，②softを選ぶ。\nFRAME 066 ③ 　 もう1度要点を私たちに説明してくださいませんか。\n　 explain A to Bで「AのことをBに説明する」という意味になるので，③the point to usを選ぶ。explainの直後に〈人〉はこないことに注意。\nFRAME 069 ② 　 喫煙は彼から健康を奪った。\n　 rob A of Bで「AからBを奪う」という意味を表すので，②ofを選ぶ。\nFRAME 072 ④ 　 彼女はダンスパーティーのために髪を切ってもらった。\n　 hadは使役動詞。〈have＋O＋done〉で「Oを…してもらう，される」という意味を表すので，④cutを選ぶ。\n\nEXERCISE A >>\n01 ① 　 そのはしごを上がってはだめだ！ 安全なようには見えない。\n　 lookは形容詞を補語にとり「…に見える」という意味を表すので，①safeを選ぶ。\n10 ③ 　 パイロットはなぜ着陸が遅れたのかを私たちに説明した。\n　 explain to O that［why］ ... で「that［why］以下のことをOに説明する」という意味になるので，③explained to us whyを選ぶ。空所のあとはS(the landing)＋V(was delayed)と完全な文になっているので，whatを用いた①は不可。\n20 ② 　 その病気の症例数は増え続けた。\n　 目的語がなく，toに続く不定詞なので自動詞② riseを選ぶ。自動詞riseと他動詞raiseで活用と意味が紛らわしいので，注意が必要。\n\nEXERCISE B >>\n01 ④ talked ➡ talked about\n　 昨日の会議に出席したあと，彼はその問題について真剣に話した。\n　 talkは自動詞なので，直後に目的語をとることができない。「～について話した」という意味になるように，④talkedをtalked aboutにする。\n02 ④ to escape ➡ from escaping\n　 太陽からの光線は大気中を通り抜けるが，一方，温室効果ガスは熱が宇宙空間に流出するのを妨げる。\n　 prevent O from doingで「Oが…するのを妨げる」という意味を表すので，④to escapeはfrom escapingにする。\n03 ① discuss to ➡ discuss\n　 筆者は図書館におけるインターネットモバイル接続がもつ意味合いについてこれから論じるが，それは図書館のサービスに革新をもたらすだろうものである。\n　 discussは「～について議論する」という意味の他動詞であり，目的語の前に前置詞は必要ないので，①discuss toはdiscussにする。\n\n\n EXERCISE C >>\n01 Your story reminded me of something similar which happened to me a few years ago.\n　「 あなたの話は私に～を思い出させた」と考える。remind A of Bが「AにBを思い出させる」という意味なので，Your story reminded me of とする。「同じようなこと」はsomethingsimilarとし，関係代名詞whichを用いた節which happened to me ...を続ける。\n02 Urgent business prevented her from going on a business trip to Fukuoka yesterday.（couldn’tが不要）\n　「 急用は彼女が～に出張することを妨げた」と考える。prevent O from doingで「Oが…するのを妨げる」という意味を表すので，Urgent business prevented her from going と\nつなげる。「出張する」はgo on a business trip。\n03 My younger brother hates having his hair cut short.\n　 私の弟は髪を短く切ってもらうのをいやがる。\n　 hate doingで「…するのをいやがる」という意味になるので，まずhates havingとする。〈have＋O＋done〉で「Oを…してもらう，される」という意味を表すので，having his hair cutとつなげる。\n\n ■STEP 09: イディオム［動詞関連］（pp.31～35）\nEXERCISE A >>\n12 ③ 　「 クロコダイルとアリゲーターを見分けられますか」\n「いいえ，できません。どのように違うのですか」\n　 tell A from B「AとBとを見分ける」\n22 ② 　 A:「 次のガソリンスタンドにはいつ到着しますか」\nB:「 1時間後です」\nA:「 ああ！ 燃料が切れる」\n　 run out of「 ～を使い果たす」\n\nEXERCISE B >>\n01 ④ 　 試合は悪天候のために延期された。\n　 put off「延期する」（＝postpone）\n\nEXERCISE C >>\n01 ① on mind ➡ in mind\n　 応募にはパスポートサイズのあなたご自身の最近の写真を同封するように心に留めておいてください。\n　 keep in mind「心に留めておく」\n03 ① to ➡ for\n　 パスポートを申請するためには，申込書に記入し，最近の写真を2枚添付し，それを地元の旅券事務所に持って行かなければならない。\n　 apply for「申し込む／申請する」\n05 ② look to the word ➡ look up the word\n　 その語を辞書で調べて，それがどんな意味か私たちに教えてくれませんか。\n　 look up「調べる」\n\nEXERCISE D >>\n01 He makes it a rule not to smoke while working.\n　 make it a rule to do「…することにしている」\n08 Thank you for coming to see me off.\n　 私を見送りに来てくれてありがとう。\n　 see O off「（Oを）見送る」\n09 Ben is a kind and generous man. He still keeps in touch with most of his old friends.\n　 ベンは親切で寛大な人だ。彼はまだ昔の友人のほとんどと連絡をとり合っている。\n　 keep in touch with「連絡をとり合う」\n";
-
-function loadSampleTB(){
-  document.getElementById('problemInput').value = SAMPLE_TB_PROBLEM;
-  document.getElementById('answerInput').value = SAMPLE_TB_ANSWER;
-  setStatus('教科書形式のサンプルを読み込みました。「生成する」を押してください。', false);
-}
-
-function loadSample(){
-  document.getElementById('problemInput').value = SAMPLE_PROBLEM;
-  document.getElementById('answerInput').value = SAMPLE_ANSWER;
-  setStatus('サンプルを読み込みました。「生成する」を押してください。', false);
-}
-
-function clearAll(){
-  document.getElementById('problemInput').value = '';
-  document.getElementById('answerInput').value = '';
-  document.getElementById('output').value = '';
-  setStatus('');
-}
-
-function setStatus(msg, isWarn){
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = 'status' + (isWarn ? ' warn' : '');
-}
-
-function copyOutput(){
-  const out = document.getElementById('output');
-  out.select();
-  document.execCommand('copy');
-  setStatus('出力をコピーしました。', false);
-}
-
-function downloadOutput(){
-  const text = document.getElementById('output').value;
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'answer_output.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ---- core parsing helpers ----
-
-// Extract numbered items (1) ... 2) ... etc, halfwidth digits only) from a chunk of text.
-// Returns { '1': 'text...', '2': 'text...' }
-function extractNumberedItems(str){
-  const items = {};
-  // Consume at most a single ideographic separator space after "N)" — never a greedy \s*, which
-  // would swallow a blank (a tab, or a run of ideographic spaces) sitting right after the marker.
-  const re = /(\d+)\)　?/g;
-  const matches = [];
-  let m;
-  while((m = re.exec(str)) !== null){
-    matches.push({num:m[1], idx:m.index, end:re.lastIndex});
-  }
-  for(let i=0;i<matches.length;i++){
-    const start = matches[i].end;
-    const end = (i+1<matches.length) ? matches[i+1].idx : str.length;
-    // trim only trailing whitespace/newlines — leading whitespace may itself be a blank marker
-    items[matches[i].num] = str.slice(start,end).replace(/\s+$/, '');
-  }
-  return items;
-}
-
-// find first index of a marker (regex) in text, -1 if not found
-function findIdx(text, re){
-  const m = text.search(re);
-  return m;
-}
-
-// Circled digits ①-⑳, in order, for building/matching section markers dynamically
-const CIRCLED_DIGITS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
-
-// Split full text into major sections keyed by circled numbers (①②③④⑤...) and Give It a Try —
-// a lesson may have anywhere from a couple to half a dozen numbered exercise sections.
-function splitMajorSections(text){
-  const markers = [];
-  for(let i=0;i<CIRCLED_DIGITS.length;i++){
-    markers.push({key:String(i+1), re:new RegExp(CIRCLED_DIGITS[i])});
-  }
-  markers.push({key:'give', re:/\[?\s*Give It a Try/});
-  const positions = [];
-  markers.forEach(mk=>{
-    const idx = findIdx(text, mk.re);
-    if(idx !== -1) positions.push({key:mk.key, idx});
-  });
-  positions.sort((a,b)=>a.idx-b.idx);
-  const sections = {};
-  for(let i=0;i<positions.length;i++){
-    const start = positions[i].idx;
-    const end = (i+1<positions.length) ? positions[i+1].idx : text.length;
-    sections[positions[i].key] = text.slice(start,end);
-  }
-  return sections;
-}
-
-// Unique token that stands in for a detected blank once problem text is normalized
-const BLANK_TOKEN = '@@BLANK@@';
-const JP_CHAR_RE = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
-// Broader marker used only for trimming trailing footnote glosses out of an isolated template
-// line — also catches CJK brackets like 「」 that JP_CHAR_RE (kana/kanji only) would miss.
-const FOOTNOTE_MARK_RE = /[「」\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
-
-// Does this line, on its own, contribute nothing to the sentence — just a hint bracket like
-// "［wait］" with nothing else?
-function isHintOnlyLine(line){
-  return line.replace(/[［\[][^］\]]*[］\]]/g, '').trim().length === 0;
-}
-// Does this line consist ONLY of a word-bank parenthetical, e.g. "(can, on, you, someone, depend)"?
-function isWordBankOnlyLine(line){
-  return /^[（(][^（）()]*[，,][^（）()]*[）)]\.?$/.test(line.trim());
-}
-
-// Build the English sentence-in-progress for an item by keeping the line that has to contain the
-// blank/answer and merging in any earlier line ONLY if that earlier line is a wrapped
-// continuation of the same sentence (doesn't already end with . ! ?) rather than a separate,
-// already-complete sentence used purely as context.
-function buildSentenceCandidate(itemText){
-  const lines = (itemText || '').split('\n').filter(l=>l.trim().length>0);
-  const candidates = lines.filter(line =>
-    !isHintOnlyLine(line) && !isWordBankOnlyLine(line) && !containsJapanese(line)
-  );
-  if(candidates.length === 0) return lines.length ? lines[lines.length-1] : (itemText || '');
-  const result = [candidates[candidates.length-1]];
-  for(let i=candidates.length-2; i>=0; i--){
-    const prev = candidates[i];
-    if(/[.!?]\s*$/.test(prev.trim())) break; // a separate complete sentence — stop merging
-    result.unshift(prev);
-  }
-  return result.join(' ');
-}
-
-// Detect every blank-marker style seen in these worksheets within a single (already-merged)
-// sentence line and normalize them all into one consistent token.
-function normalizeLineBlanks(line){
-  // explicit paren-blank markers are safe to detect anywhere, and there can be more than one
-  let t = line.replace(/[（(][\s　]{2,}[）)]/g, ' ' + BLANK_TOKEN + ' ');
-
-  // Walk the tabs left to right. A tab followed by Japanese text or a comma word-bank is the
-  // start of trailing reference material (word bank / footnote gloss) — cut the line there. A
-  // tab followed by ordinary English content is a real blank, so leave it for the next step.
-  let cutAt = -1;
-  let searchFrom = 0;
-  while(true){
-    const tabIdx = t.indexOf('\t', searchFrom);
-    if(tabIdx === -1) break;
-    const nextTabIdx = t.indexOf('\t', tabIdx + 1);
-    const segment = nextTabIdx === -1 ? t.slice(tabIdx + 1) : t.slice(tabIdx + 1, nextTabIdx);
-    const looksLikeReference = containsJapanese(segment) || /^\s*[（(][^（）()]*[，,]/.test(segment);
-    if(looksLikeReference){
-      cutAt = tabIdx;
-      break;
-    }
-    searchFrom = tabIdx + 1;
-  }
-  if(cutAt !== -1) t = t.slice(0, cutAt);
-
-  // Now convert the first remaining bare blank (a tab, or a run of 2+ ideographic spaces) into
-  // the token; any further one is just leftover formatting, not a second blank.
-  let converted = false;
-  t = t.replace(/\t|[ ]?　{2,}[ ]?/g, (m) => {
-    if(!converted){ converted = true; return ' ' + BLANK_TOKEN + ' '; }
-    return ' ';
-  });
-
-  return t;
-}
-
-// For type-B (word order / translation) answer lines: strip [alt] choices and () markers, keep content
-function buildFullSentence(raw){
-  let s = raw;
-  // remove alternate-choice brackets entirely, e.g. [got], [You shouldn't / should not]
-  s = s.replace(/[\[［][^\]］]*[\]］]/g, '');
-  // remove parenthesis characters only, keep inner words
-  s = s.replace(/[（(]/g, '').replace(/[）)]/g, '');
-  // drop stray footnote-reference asterisks (e.g. "lied*")
-  s = s.replace(/\*/g, '');
-  // collapse whitespace
-  s = s.replace(/\s{2,}/g, ' ').trim();
-  // drop trailing stray punctuation duplication spaces before punctuation
-  s = s.replace(/\s+([.,?!])/g, '$1');
-  return s;
-}
-
-// Fill BLANK_TOKEN placeholders in a template sentence with an ordered list of words
-function fillBlanks(template, answers){
-  let i = 0;
-  const re = new RegExp(BLANK_TOKEN.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g');
-  let result = template.replace(re, () => {
-    const val = (answers[i] !== undefined) ? answers[i] : '⚠️??';
-    i++;
-    return val;
-  });
-  // strip leftover hint brackets just in case
-  result = result.replace(/[［\[][^］\]]*[］\]]/g, '');
-  result = result.replace(/\s{2,}/g, ' ').trim();
-  result = result.replace(/\s+([.,?!])/g, '$1');
-  // an inserted answer that already ends in "." or "!" can collide with the template's own
-  // trailing punctuation (e.g. "...exam. ." -> "...exam.."); collapse the duplicate. Leave "?"
-  // alone since "??" is also used as the missing-answer warning marker.
-  result = result.replace(/([.!])\1+/g, '$1');
-  return result;
-}
-
-// Extract Japanese sentence portion (up to and including first 。) from a problem item line
-function extractJapaneseUpToPeriod(str){
-  const m = str.match(/^[\s　]*([^。]*。)/);
-  if(m) return m[1].trim();
-  return null;
-}
-
-function numSort(a,b){ return parseInt(a,10) - parseInt(b,10); }
-
-// Find a "訳" block within a chunk of text and return its numbered items ({} if none found)
-function extractYakuBlock(text){
-  const yakuIdx = text.search(/訳/);
-  if(yakuIdx === -1) return {};
-  const after = text.slice(yakuIdx + 1);
-  return extractNumberedItems(after);
-}
-
-// Try answer section first, then problem section, for a 訳 block. Returns {} if neither has one.
-function getTranslationItems(probSectionText, ansSectionText){
-  let items = extractYakuBlock(ansSectionText);
-  if(Object.keys(items).length) return items;
-  items = extractYakuBlock(probSectionText);
-  if(Object.keys(items).length) return items;
-  return {};
-}
-
-function containsJapanese(str){
-  return JP_CHAR_RE.test(str || '');
-}
-function hasCommaWordBank(str){
-  return /[（(][^）)]*[，,][^）)]*[）)]/.test(str || '');
-}
-function firstLineTrim(str){
-  if(!str) return '';
-  return str.split('\n')[0].trim();
-}
-// Remove any line that contains Japanese characters, keeping only the English portion (used before filling blanks)
-function stripJapaneseLines(str){
-  if(!str) return '';
-  return str.split('\n')
-    .filter(line => !containsJapanese(line))
-    .map(line => line.replace(/^[\t ]+|[\t ]+$/g, ''))
-    .join(' ')
-    .trim();
-}
-// Extract a lettered option box ("a. ..." "b. ..." etc) from a section of problem text, if present.
-// Returns {a: 'phrase', b: 'phrase', ...} or {} if no such pattern is found.
-function extractLetterOptions(sectionText){
-  const map = {};
-  const re = /(?:^|[\t\n])([a-h])\.\s*([^\t\n]+)/g;
-  let m;
-  while((m = re.exec(sectionText)) !== null){
-    let val = m[2];
-    // drop a trailing footnote separated from the phrase by a big gap
-    val = val.split(/[\s　]{3,}/)[0];
-    val = val.replace(/\*+\s*$/, '').trim();
-    if(val) map[m[1]] = val;
-  }
-  // only trust this as a real option box if we found at least two lettered entries
-  return (Object.keys(map).length >= 2) ? map : {};
-}
-
-// ============================================================================
-// 教科書形式（STEP / FRAME / EXERCISE A〜D, 「□ 01」形式, 選択肢①〜④が問題文内）用の解析
-// ============================================================================
-const TB_CIRC = '[\\u2460-\\u2473]';           // ①〜⑳
-const TB_CIRC_RE = new RegExp(TB_CIRC);
-const TB_CIRC_G = new RegExp(TB_CIRC, 'g');
-
-function isTextbookFormat(p){
-  return /EXERCISE[\s　]*[A-Z][\s　]*>>/.test(p) || /(^|\n)[ \t　]*FRAME[\s　]*\d+/.test(p);
-}
-
-// 問題文・解答文を「STEP → セクション(FRAME / A / B…) → 項目」に分解する
-function tbParse(text, isAnswer){
-  const lines = text.replace(/\r/g, '').split('\n');
-  const steps = [];
-  let step = null, sec = null, item = null;
-  const stepRe  = /^[\s　]*■?[\s　]*STEP[\s　]*(\d+)/i;
-  const secRe   = /^[\s　]*EXERCISE[\s　]+([A-Z])\b/i;
-  const frameRe = /^[\s　]*FRAME[\s　]*(\d+)[\s　]*(.*)$/;
-  const boxRe   = /^[\s　]*□[\s　]*(\d+)[\s　]*(.*)$/;
-  const ansNumRe= /^(\d{1,3})[\s　]+(.*)$/;      // 解答側は行頭が数字（インデントなし）
-
-  function ensureStep(){
-    if(!step){ step = {no:'0', title:'', sections:[]}; steps.push(step); }
-  }
-  function openSec(key){
-    ensureStep();
-    sec = step.sections.find(s => s.key === key);
-    if(!sec){ sec = {key:key, items:[]}; step.sections.push(sec); }
-    item = null;
-  }
-  for(const raw of lines){
-    let m;
-    if((m = raw.match(stepRe))){
-      step = {no:String(parseInt(m[1],10)), title:raw.replace(/^[\s　]*■/, '').trim(), sections:[]};
-      steps.push(step);
-      openSec('FRAME');
-      continue;
-    }
-    if((m = raw.match(secRe))){ openSec(m[1].toUpperCase()); continue; }
-    if((m = raw.match(frameRe))){
-      if(!sec || sec.key !== 'FRAME') openSec('FRAME');
-      item = {num:String(parseInt(m[1],10)), label:'FRAME ' + m[1], head:m[2], lines:[]};
-      sec.items.push(item);
-      continue;
-    }
-    if(!isAnswer && (m = raw.match(boxRe))){
-      if(!sec) openSec('?');
-      item = {num:String(parseInt(m[1],10)), label:m[1], head:m[2], lines:[]};
-      sec.items.push(item);
-      continue;
-    }
-    if(isAnswer && sec && sec.key !== 'FRAME' && (m = raw.match(ansNumRe))){
-      item = {num:String(parseInt(m[1],10)), label:m[1], head:m[2], lines:[]};
-      sec.items.push(item);
-      continue;
-    }
-    if(item) item.lines.push(raw);
-  }
-  return steps;
-}
-
-// 〈大学名〉を除き、空白類を1つにまとめる
-function tbClean(s){
-  return (s || '').replace(/〈[^〉]*〉/g, '').replace(/[\s　]+/g, ' ').trim();
-}
-// 和文：OCR由来の不要な空白を除く（「 次の → 「次の など）
-function tbCleanJP(s){
-  return (s || '')
-    .replace(/[\s　]+/g, ' ')
-    .replace(/「 +/g, '「').replace(/ +」/g, '」')
-    .replace(/([^\x00-\x7F]) +(?=[^\x00-\x7F])/g, '$1')
-    .trim();
-}
-
-// 解答側の1項目を分類する： error（➡あり）/ choice（①〜が先頭）/ text（英文が先頭）
-function tbParseAnswerItem(a){
-  const head = (a.head || '').trim();
-  let m;
-  // 先頭の空行は読み飛ばし、最初の非空行を取る
-  const extra = a.lines.slice();
-  const firstNonEmpty = () => {
-    for(const l of extra){ if(l.trim() !== '') return l.trim(); }
-    return '';
-  };
-  m = head.match(new RegExp('^(' + TB_CIRC + ')[\\s　]*(.*?)[\\s　]*[➡→⇒][\\s　]*(.+)$'));
-  if(m){
-    return {type:'error', mark:m[1], before:m[2].trim(), after:m[3].trim(), translation:tbCleanJP(firstNonEmpty())};
-  }
-  m = head.match(new RegExp('^(' + TB_CIRC + ')[\\s　]*(.*)$'));
-  if(m){
-    // 訳は1行目の残り＋インデントされていない続きの行（会話文など）
-    const parts = [m[2].trim()];
-    for(const l of extra){
-      if(l.trim() === '' || /^[\s　]/.test(l)) break;
-      parts.push(l.trim());
-    }
-    return {type:'choice', mark:m[1], translation:tbCleanJP(parts.join(' '))};
-  }
-  return {type:'text', english:head, translation:tbCleanJP(firstNonEmpty())};
-}
-
-// 問題側に和文（並べかえ・整序問題の日本語指示）があれば取り出す
-function tbProblemJapanese(probFull){
-  let t = probFull.replace(/〈[^〉]*〉/g, '').replace(/［[^］]*］/g, '');
-  const re = /[\u3040-\u30FF\u4E00-\u9FFF。、，．「」]/g;
-  let last = -1, m;
-  while((m = re.exec(t)) !== null) last = m.index;
-  if(last === -1) return '';
-  return tbCleanJP(t.slice(0, last + 1));
-}
-
-function tbBuild(it, a){
-  const probFull = [it.head].concat(it.lines).join('\n');
-  if(!a) return {sentence:'⚠️ 解答が見つかりません', translation:'', warn:1};
-  const pa = tbParseAnswerItem(a);
-  let sentence = '', translation = pa.translation || '', warn = 0;
-
-  if(pa.type === 'choice'){
-    // 問題文を「文」と「選択肢」に分ける
-    const ci = probFull.search(TB_CIRC_RE);
-    const stem = tbClean(ci === -1 ? probFull : probFull.slice(0, ci));
-    const optsText = ci === -1 ? '' : probFull.slice(ci);
-    const opts = {};
-    const re = new RegExp('(' + TB_CIRC + ')([^\\u2460-\\u2473]*)', 'g');
-    let m;
-    while((m = re.exec(optsText)) !== null) opts[m[1]] = tbClean(m[2]);
-    const chosen = opts[pa.mark];
-    const blankRe = /[（(]\s*[）)]/;
-    if(!chosen){
-      sentence = '⚠️ ' + stem; warn++;
-    } else if(blankRe.test(stem)){
-      sentence = stem.replace(blankRe, ' ' + chosen + ' ');
-    } else {
-      sentence = stem;   // 下線部の言い換え問題など：空所なし → 英文をそのまま
+    function $(id) {
+      return document.getElementById(id);
     }
 
-  } else if(pa.type === 'error'){
-    let sent = probFull.replace(/〈[^〉]*〉/g, '').replace(/[\t\n]+/g, ' ');
-    const pos = sent.indexOf(pa.mark);
-    let applied = false;
-    if(pos !== -1){
-      const head = sent.slice(0, pos);
-      const rest = sent.slice(pos + 1);
-      const restTrim = rest.replace(/^[\s　]+/, '');
-      if(pa.before && restTrim.toLowerCase().startsWith(pa.before.toLowerCase())){
-        sent = head + pa.after + restTrim.slice(pa.before.length);
-        applied = true;
-      } else if(pa.before){
-        const k = rest.toLowerCase().indexOf(pa.before.toLowerCase());
-        if(k !== -1){
-          sent = head + rest.slice(0, k) + pa.after + rest.slice(k + pa.before.length);
-          applied = true;
+    function setStatus(message, isWarn) {
+      const el = $('status');
+      el.textContent = message || '';
+      el.className = 'status' + (isWarn ? ' warn' : '');
+    }
+
+    function loadSample() {
+      $('problemInput').value = SAMPLE_WORKSHEET_PROBLEM;
+      $('answerInput').value = SAMPLE_WORKSHEET_ANSWER;
+      setStatus('サンプルを読み込みました。「生成する」を押してください。', false);
+    }
+
+    function loadSampleTextbook() {
+      $('problemInput').value = SAMPLE_TEXTBOOK_PROBLEM;
+      $('answerInput').value = SAMPLE_TEXTBOOK_ANSWER;
+      setStatus('教科書形式のサンプルを読み込みました。「生成する」を押してください。', false);
+    }
+
+    function clearAll() {
+      $('problemInput').value = '';
+      $('answerInput').value = '';
+      $('output').value = '';
+      setStatus('');
+    }
+
+    function copyOutput() {
+      const out = $('output');
+      out.select();
+      document.execCommand('copy');
+      setStatus('出力をコピーしました。', false);
+    }
+
+    function downloadOutput() {
+      const blob = new Blob([$('output').value], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'answer_output.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+
+    /* ---------------------------------------------------------------------
+     * 3. 共通の文字列ユーティリティ
+     * ------------------------------------------------------------------- */
+
+    function containsJapanese(str) {
+      return JP_CHAR_RE.test(str || '');
+    }
+
+    // 「(a, b, c)」のようなカンマ区切りの語群を含むか
+    function hasCommaWordBank(str) {
+      return /[（(][^）)]*[，,][^）)]*[）)]/.test(str || '');
+    }
+
+    function firstLineTrim(str) {
+      return str ? str.split('\n')[0].trim() : '';
+    }
+
+    function numSort(a, b) {
+      return parseInt(a, 10) - parseInt(b, 10);
+    }
+
+    // 「1) …　2) …」形式（半角数字＋半角閉じ括弧）を { '1': '…', '2': '…' } に分解する
+    function extractNumberedItems(str) {
+      // マーカー直後の全角スペースは最大1つだけ消費する。
+      // 貪欲な \s* だと、直後に来る「空所を表すタブや全角スペースの連続」まで食べてしまう。
+      const re = /(\d+)\)　?/g;
+      const matches = [];
+      let m;
+      while ((m = re.exec(str)) !== null) {
+        matches.push({ num: m[1], idx: m.index, end: re.lastIndex });
+      }
+
+      const items = {};
+      matches.forEach((cur, i) => {
+        const end = (i + 1 < matches.length) ? matches[i + 1].idx : str.length;
+        // 末尾の空白だけ削る（先頭の空白は空所の目印かもしれないので残す）
+        items[cur.num] = str.slice(cur.end, end).replace(/\s+$/, '');
+      });
+      return items;
+    }
+
+
+    /* ---------------------------------------------------------------------
+     * 4. プリント形式（①②③…の大問）
+     * ------------------------------------------------------------------- */
+
+    /* ---- 4-1. 解析 ---- */
+
+    // 全文を ①②③…／[Give It a Try!] ごとの大問に分割する
+    function splitMajorSections(text) {
+      const markers = [];
+      for (let i = 0; i < CIRCLED_DIGITS.length; i++) {
+        markers.push({ key: String(i + 1), re: new RegExp(CIRCLED_DIGITS[i]) });
+      }
+      markers.push({ key: 'give', re: /\[?\s*Give It a Try/ });
+
+      const positions = [];
+      markers.forEach(marker => {
+        const idx = text.search(marker.re);
+        if (idx !== -1) positions.push({ key: marker.key, idx: idx });
+      });
+      positions.sort((a, b) => a.idx - b.idx);
+
+      const sections = {};
+      positions.forEach((pos, i) => {
+        const end = (i + 1 < positions.length) ? positions[i + 1].idx : text.length;
+        sections[pos.key] = text.slice(pos.idx, end);
+      });
+      return sections;
+    }
+
+    // 「訳」ブロックの番号付き項目を返す（なければ {}）
+    function extractYakuBlock(text) {
+      const yakuIdx = text.search(/訳/);
+      if (yakuIdx === -1) return {};
+      return extractNumberedItems(text.slice(yakuIdx + 1));
+    }
+
+    // 解答側 → 問題側の順で「訳」ブロックを探す
+    function getTranslationItems(problemSection, answerSection) {
+      const fromAnswer = extractYakuBlock(answerSection);
+      if (Object.keys(fromAnswer).length) return fromAnswer;
+      return extractYakuBlock(problemSection);
+    }
+
+    // 「a. …　b. …」形式の選択肢ボックスを { a: '…', b: '…' } にする（2つ未満なら {}）
+    function extractLetterOptions(sectionText) {
+      const map = {};
+      const re = /(?:^|[\t\n])([a-h])\.\s*([^\t\n]+)/g;
+      let m;
+      while ((m = re.exec(sectionText)) !== null) {
+        let value = m[2];
+        value = value.split(/[\s　]{3,}/)[0];          // 大きな空きのあとの脚注を落とす
+        value = value.replace(/\*+\s*$/, '').trim();
+        if (value) map[m[1]] = value;
+      }
+      return Object.keys(map).length >= 2 ? map : {};
+    }
+
+    // 問題の1項目から、日本語の文（最初の「。」まで）を取り出す
+    function extractJapaneseUpToPeriod(str) {
+      const m = str.match(/^[\s　]*([^。]*。)/);
+      return m ? m[1].trim() : null;
+    }
+
+    /* ---- 4-2. 文の組み立て ---- */
+
+    // 「ヒントだけの行」（例：［wait］）か
+    function isHintOnlyLine(line) {
+      return line.replace(/[［\[][^］\]]*[］\]]/g, '').trim().length === 0;
+    }
+
+    // 「語群だけの行」（例：(can, on, you, someone, depend)）か
+    function isWordBankOnlyLine(line) {
+      return /^[（(][^（）()]*[，,][^（）()]*[）)]\.?$/.test(line.trim());
+    }
+
+    // 空所を含む英文を1つにまとめる。
+    // 前の行は、文末記号で終わっていない（＝折り返しの続き）ときだけ連結する。
+    function buildSentenceCandidate(itemText) {
+      const lines = (itemText || '').split('\n').filter(l => l.trim().length > 0);
+      const candidates = lines.filter(line =>
+        !isHintOnlyLine(line) && !isWordBankOnlyLine(line) && !containsJapanese(line)
+      );
+      if (candidates.length === 0) {
+        return lines.length ? lines[lines.length - 1] : (itemText || '');
+      }
+
+      const result = [candidates[candidates.length - 1]];
+      for (let i = candidates.length - 2; i >= 0; i--) {
+        if (/[.!?]\s*$/.test(candidates[i].trim())) break;   // 別の完結した文 → 連結しない
+        result.unshift(candidates[i]);
+      }
+      return result.join(' ');
+    }
+
+    // 文中のさまざまな空所表記を BLANK_TOKEN に統一する
+    function normalizeLineBlanks(line) {
+      // (　　　) のように全角/半角スペース2つ以上を含む括弧は、どこにあっても空所
+      let text = line.replace(/[（(][\s　]{2,}[）)]/g, ' ' + BLANK_TOKEN + ' ');
+
+      // タブを左から順に見る。タブの後ろが日本語や語群なら、そこから先は参考情報なので切り落とす。
+      // 通常の英語が続くタブは本物の空所なので、次の手順に残す。
+      let cutAt = -1;
+      let searchFrom = 0;
+      while (true) {
+        const tabIdx = text.indexOf('\t', searchFrom);
+        if (tabIdx === -1) break;
+        const nextTabIdx = text.indexOf('\t', tabIdx + 1);
+        const segment = nextTabIdx === -1 ? text.slice(tabIdx + 1) : text.slice(tabIdx + 1, nextTabIdx);
+        const looksLikeReference = containsJapanese(segment) || /^\s*[（(][^（）()]*[，,]/.test(segment);
+        if (looksLikeReference) {
+          cutAt = tabIdx;
+          break;
+        }
+        searchFrom = tabIdx + 1;
+      }
+      if (cutAt !== -1) text = text.slice(0, cutAt);
+
+      // 残ったタブ／全角スペース2つ以上の最初の1か所を空所にする（2か所目以降はただの余白）
+      let converted = false;
+      text = text.replace(/\t|[ ]?　{2,}[ ]?/g, () => {
+        if (converted) return ' ';
+        converted = true;
+        return ' ' + BLANK_TOKEN + ' ';
+      });
+      return text;
+    }
+
+    // 整序・和文英訳の解答行から完成英文を作る：[別解] を消し、（）は記号だけ外す
+    function buildFullSentence(raw) {
+      return raw
+        .replace(/[\[［][^\]］]*[\]］]/g, '')       // 別解の角括弧を中身ごと削除
+        .replace(/[（(]/g, '').replace(/[）)]/g, '')  // 括弧記号のみ削除
+        .replace(/\*/g, '')                           // 脚注の * を削除
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .replace(/\s+([.,?!])/g, '$1');
+    }
+
+    // テンプレート文の BLANK_TOKEN を answers の順に埋める。足りなければ ⚠️?? を入れる
+    function fillBlanks(template, answers) {
+      let i = 0;
+      let result = template.replace(BLANK_RE, () => {
+        const value = (answers[i] !== undefined) ? answers[i] : '⚠️??';
+        i++;
+        return value;
+      });
+      result = result
+        .replace(/[［\[][^］\]]*[］\]]/g, '')       // 残ったヒント括弧を除去
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .replace(/\s+([.,?!])/g, '$1');
+      // 解答の末尾の「.」とテンプレートの「.」が重なったときの重複を畳む（「?」は ⚠️?? と紛らわしいので除外）
+      return result.replace(/([.!])\1+/g, '$1');
+    }
+
+    /* ---- 4-3. 1項目ごとの生成（種類別） ---- */
+
+    // 種類D：a〜h の選択肢ボックスから選ぶ形式（解答は記号1文字）
+    function buildBoxChoiceItem(problemText, letterKey, letterOptions, yakuItem) {
+      const template = normalizeLineBlanks(firstLineTrim(problemText));
+      return {
+        sentence: fillBlanks(template, [letterOptions[letterKey]]),
+        translation: yakuItem || extractJapaneseUpToPeriod(problemText),
+        warnings: 0
+      };
+    }
+
+    // 種類A：空所補充。解答が「不足分だけ」でも「文全体」でも対応する
+    function buildFillBlankItem(sentenceCandidate, rawAnswer, yakuItem, problemText) {
+      let template = sentenceCandidate;
+
+      // 語群や脚注（「天才」など）をテンプレートから切り落とす
+      const wordBank = template.match(/[（(][^（）()]*[，,][^（）()]*[）)]/);
+      if (wordBank) template = template.slice(0, wordBank.index);
+      const footIdx = template.search(FOOTNOTE_MARK_RE);
+      if (footIdx !== -1) template = template.slice(0, footIdx);
+      template = template.replace(/\s{2,}/g, ' ').trim();
+
+      const blankCount = (template.match(BLANK_RE) || []).length;
+      const parts = template.split(BLANK_TOKEN);
+      const prefix = (parts[0] || '').trim();
+      const suffix = (parts[parts.length - 1] || '').trim().replace(/[.,!?]+$/, '');
+      const cleanedAnswer = buildFullSentence(rawAnswer);
+      const comparable = cleanedAnswer.toLowerCase().replace(/[.,!?]+$/, '');
+
+      // 解答が空所の前後の固定部分を含んでいれば「文全体」とみなす
+      const looksLikeFullSentence =
+        (prefix.length >= 3 && comparable.startsWith(prefix.toLowerCase())) ||
+        (suffix.length >= 3 && comparable.endsWith(suffix.toLowerCase()));
+
+      const translation = yakuItem || extractJapaneseUpToPeriod(problemText);
+      if (looksLikeFullSentence && rawAnswer) {
+        return { sentence: cleanedAnswer, translation: translation, warnings: 0 };
+      }
+
+      // 空所が1つなら解答全体を1語句として使う（「, when」や「X. / Y.」を壊さないため分割しない）
+      let answers;
+      if (blankCount === 1) {
+        answers = cleanedAnswer ? [cleanedAnswer] : [];
+      } else {
+        answers = cleanedAnswer.split(/[,，・\/／]/).map(s => s.trim()).filter(Boolean);
+        if (answers.length !== blankCount) {
+          const byWhitespace = cleanedAnswer.split(/\s+/).filter(Boolean);
+          if (byWhitespace.length === blankCount) answers = byWhitespace;
         }
       }
-    }
-    sentence = sent.replace(TB_CIRC_G, '');
-    if(!applied){ sentence = '⚠️ ' + sentence; warn++; }
 
-  } else { // text：整序・語句補充など。解答の英文がそのまま完成文
-    sentence = pa.english.replace(/[（(][^）)]*不要[）)]/g, '');
-    if(!sentence.trim()){ sentence = '⚠️ 英文が見つかりません'; warn++; }
-    const jp = tbProblemJapanese(probFull);
-    if(jp){
-      translation = jp;     // 問題文に和文があればそれを優先
-    } else if(/(という意味を表|を表すので|と考える|に注意|で「[^」]*」という意味)/.test(translation)){
-      translation = '⚠️ ' + translation; warn++;   // 訳ではなく解説を拾った可能性
-    }
-  }
-
-  sentence = sentence.replace(/\*/g, '').replace(/\s+([.,?!;:])/g, '$1').replace(/\s{2,}/g, ' ').trim();
-  if(!translation){ translation = '⚠️ 和訳が見つかりません'; warn++; }
-  return {sentence:sentence, translation:translation, warn:warn};
-}
-
-function generateTextbook(problemText, answerText){
-  const P = tbParse(problemText, false);
-  const A = tbParse(answerText, true);
-  const ansMap = {};
-  A.forEach(st => st.sections.forEach(sc => sc.items.forEach(it => {
-    ansMap[st.no + '|' + sc.key + '|' + it.num] = it;
-  })));
-  const out = [];
-  let warnings = 0, count = 0;
-  P.forEach(st => {
-    if(!st.sections.some(sc => sc.items.length)) return;
-    if(out.length) out.push('');
-    out.push(st.title || ('STEP ' + st.no));
-    st.sections.forEach(sc => {
-      if(!sc.items.length) return;
-      out.push('');
-      out.push(sc.key === 'FRAME' ? 'FRAME' : 'EXERCISE ' + sc.key);
-      sc.items.forEach(it => {
-        const r = tbBuild(it, ansMap[st.no + '|' + sc.key + '|' + it.num]);
-        warnings += r.warn;
-        count++;
-        out.push(`${it.label})　${r.sentence}; ${r.translation}`);
-      });
-    });
-  });
-  return {text:out.join('\n'), warnings:warnings, count:count};
-}
-
-function generate(){
-  const problemText = document.getElementById('problemInput').value;
-  const answerText = document.getElementById('answerInput').value;
-
-  if(!problemText.trim() || !answerText.trim()){
-    setStatus('問題と解答の両方を貼り付けてください。', true);
-    return;
-  }
-
-  // 教科書形式（STEP / FRAME / EXERCISE）なら専用の解析に切り替える
-  if(isTextbookFormat(problemText)){
-    const r = generateTextbook(problemText, answerText);
-    document.getElementById('output').value = r.text;
-    if(r.count === 0){
-      setStatus('問題が1件も見つかりませんでした。問題文の貼り付け内容を確認してください。', true);
-    } else if(r.warnings > 0){
-      setStatus(`教科書形式で ${r.count} 問を生成しました。⚠️ が ${r.warnings} 箇所あります。出力欄で確認・修正してください。`, true);
-    } else {
-      setStatus(`教科書形式で ${r.count} 問を生成しました。内容を確認してください。`, false);
-    }
-    return;
-  }
-
-  let warnings = 0;
-  const outputLines = [];
-
-  // Title: first line of problem text, cut at first run of 2+ spaces
-  const firstLine = problemText.split('\n')[0] || '';
-  const title = firstLine.split(/\s{2,}/)[0].trim() || firstLine.trim();
-  outputLines.push(title);
-
-  const probSections = splitMajorSections(problemText);
-  const ansSections = splitMajorSections(answerText);
-
-  // Build the ordered list of section keys actually present (any circled-number sections found,
-  // in numeric order, followed by Give It a Try if present) rather than assuming exactly ①-④.
-  const numericKeys = Object.keys(probSections).filter(k => k !== 'give').sort(numSort);
-  const sectionKeys = numericKeys.concat(probSections['give'] ? ['give'] : []);
-  const sectionLabels = {give: '[Give It a Try!]'};
-  numericKeys.forEach(k => { sectionLabels[k] = CIRCLED_DIGITS[parseInt(k,10)-1] || (`(${k})`); });
-
-  sectionKeys.forEach(key=>{
-    if(!probSections[key] || !ansSections[key]) return;
-    outputLines.push('');
-    outputLines.push(sectionLabels[key]);
-
-    try{
-      if(key !== 'give'){
-        const ansSec = ansSections[key];
-        const kaisetsuIdx = ansSec.search(/解説/);
-        const answerListPart = kaisetsuIdx !== -1 ? ansSec.slice(0, kaisetsuIdx) : ansSec;
-
-        const answerItems = extractNumberedItems(answerListPart);
-        const yakuItems = getTranslationItems(probSections[key], ansSec);
-        const problemItems = extractNumberedItems(probSections[key]);
-        const letterOptions = extractLetterOptions(probSections[key]);
-
-        let nums = Object.keys(problemItems).sort(numSort);
-        if(nums.length === 0) nums = Object.keys(answerItems).sort(numSort);
-
-        nums.forEach(n=>{
-          const pText = problemItems[n] || '';
-          let sentence, translation;
-          const rawAnswerStr = (answerItems[n] || '').trim();
-          const letterKey = rawAnswerStr.toLowerCase();
-
-          // The real blank-to-fill (if any) lives in the sentence itself — build that sentence by
-          // merging every line that's actually part of it (a wrapped continuation included) and
-          // dropping only pure Japanese-cue / word-bank / hint-only lines.
-          // Exception: a "choose from the box" (lettered options) item is always single-sentence,
-          // and if it's the final numbered item it may have swallowed the trailing option list as
-          // part of its raw text — so that type always uses the first line instead.
-          const lastLine = normalizeLineBlanks(buildSentenceCandidate(pText));
-
-          if(Object.keys(letterOptions).length && /^[a-h]$/.test(letterKey) && letterOptions[letterKey]){
-            // TYPE D: "choose a phrase from the box" — answer is a single letter mapping to an option list
-            const firstLine = normalizeLineBlanks(firstLineTrim(pText));
-            sentence = fillBlanks(firstLine, [letterOptions[letterKey]]);
-            translation = (yakuItems[n] && yakuItems[n].trim()) || extractJapaneseUpToPeriod(pText);
-
-          } else if(lastLine.includes(BLANK_TOKEN)){
-            // A blank marker exists — but the answer key might supply either just the missing
-            // fragment, or the whole rebuilt sentence (parens marking the inserted part). Decide
-            // by checking whether the answer overlaps the fixed wording around the blank.
-            let englishTemplate = lastLine;
-            const wordBankMatch = englishTemplate.match(/[（(][^（）()]*[，,][^（）()]*[）)]/);
-            if(wordBankMatch){
-              englishTemplate = englishTemplate.slice(0, wordBankMatch.index);
-            }
-            // drop a trailing footnote gloss (e.g. "genius「天才」") that isn't inside parens
-            const footIdx = englishTemplate.search(FOOTNOTE_MARK_RE);
-            if(footIdx !== -1) englishTemplate = englishTemplate.slice(0, footIdx);
-            englishTemplate = englishTemplate.replace(/\s{2,}/g, ' ').trim();
-
-            const blankCount = (englishTemplate.match(new RegExp(BLANK_TOKEN.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g')) || []).length;
-            const parts = englishTemplate.split(BLANK_TOKEN);
-            const prefix = (parts[0] || '').trim();
-            const suffix = (parts[parts.length-1] || '').trim().replace(/[.,!?]+$/, '');
-            const cleanedRawAnswerStr = buildFullSentence(rawAnswerStr);
-            const cleanedAnswer = cleanedRawAnswerStr.toLowerCase().replace(/[.,!?]+$/, '');
-
-            const looksLikeFullSentence =
-              (prefix.length >= 3 && cleanedAnswer.startsWith(prefix.toLowerCase())) ||
-              (suffix.length >= 3 && cleanedAnswer.endsWith(suffix.toLowerCase()));
-
-            if(looksLikeFullSentence && rawAnswerStr){
-              sentence = cleanedRawAnswerStr;
-            } else {
-              // With exactly one blank, use the whole cleaned answer as-is — splitting it on
-              // commas or slashes would wrongly break up a single answer like ", when" (the
-              // comma is meaningful) or "X. / Y." (two full alternative sentences).
-              let answersForItem;
-              if(blankCount === 1){
-                answersForItem = cleanedRawAnswerStr ? [cleanedRawAnswerStr] : [];
-              } else {
-                answersForItem = cleanedRawAnswerStr.split(/[,，・\/／]/).map(s=>s.trim()).filter(Boolean);
-                if(answersForItem.length !== blankCount){
-                  const byWhitespace = cleanedRawAnswerStr.split(/\s+/).map(s=>s.trim()).filter(Boolean);
-                  if(byWhitespace.length === blankCount){
-                    answersForItem = byWhitespace;
-                  }
-                }
-              }
-              if(answersForItem.length === 0){
-                sentence = '⚠️ ' + englishTemplate;
-                warnings++;
-              } else {
-                sentence = fillBlanks(englishTemplate, answersForItem);
-                if(sentence.indexOf('⚠️') !== -1) warnings++;
-              }
-            }
-            translation = (yakuItems[n] && yakuItems[n].trim()) || extractJapaneseUpToPeriod(pText);
-
-          } else if(containsJapanese(pText) || hasCommaWordBank(pText)){
-            // TYPE B: Japanese cue and/or scrambled word bank, no separate blank; answer holds the built sentence
-            const rawAns = answerItems[n];
-            if(!rawAns){
-              sentence = '⚠️ 解答が見つかりません';
-              warnings++;
-            } else {
-              sentence = buildFullSentence(rawAns);
-            }
-            translation = (yakuItems[n] && yakuItems[n].trim()) || extractJapaneseUpToPeriod(pText);
-
-          } else {
-            // TYPE C: problem already gives the complete English sentence; answer is the Japanese translation
-            sentence = firstLineTrim(pText);
-            if(!sentence){
-              sentence = '⚠️ 英文が見つかりません';
-              warnings++;
-            }
-            translation = (yakuItems[n] && yakuItems[n].trim()) || (answerItems[n] ? answerItems[n].trim() : '');
-          }
-
-          if(!translation){
-            translation = '⚠️ 和文が見つかりません';
-            warnings++;
-          }
-          if(sentence){
-            sentence = sentence.replace(/\*/g, '').replace(/\s{2,}/g, ' ').trim();
-          }
-          outputLines.push(`${n})　${sentence}; ${translation}`);
-        });
-
-      } else if(key === 'give'){
-        // normalize "例)" into "0)" so it can be handled by the same numbered-item logic
-        const probGive = probSections[key].replace(/例\)/, '0)');
-        const ansGive = ansSections[key].replace(/例\)/, '0)');
-
-        const yakuIdx = ansGive.search(/訳/);
-        const answerListPart = yakuIdx !== -1 ? ansGive.slice(0, yakuIdx) : ansGive;
-
-        const answerItems = extractNumberedItems(answerListPart);
-        const translationItems = getTranslationItems(probGive, ansGive);
-
-        const nums = Object.keys(answerItems).sort(numSort);
-        nums.forEach(n=>{
-          const rawAns = answerItems[n];
-          const sentence = buildFullSentence(rawAns);
-          const translation = translationItems[n] ? translationItems[n].trim() : '⚠️ 訳が見つかりません';
-          if(!translationItems[n]) warnings++;
-          const label = (n === '0') ? '例)' : n + ')';
-          outputLines.push(`${label}　${sentence}; ${translation}`);
-        });
+      if (answers.length === 0) {
+        return { sentence: '⚠️ ' + template, translation: translation, warnings: 1 };
       }
-    } catch(e){
-      outputLines.push(`⚠️ このセクションは自動解析に失敗しました（${e.message}）。手動で編集してください。`);
-      warnings++;
+      const sentence = fillBlanks(template, answers);
+      return {
+        sentence: sentence,
+        translation: translation,
+        warnings: sentence.indexOf('⚠️') !== -1 ? 1 : 0
+      };
     }
-  });
 
-  document.getElementById('output').value = outputLines.join('\n');
-  if(warnings > 0){
-    setStatus(`生成しました。⚠️ が ${warnings} 箇所あります。出力欄で確認・修正してください。`, true);
-  } else {
-    setStatus('生成しました。内容を確認してください。', false);
-  }
-}
-</script>
+    // 種類B：整序・和文英訳。解答に完成文が書かれている
+    function buildWordOrderItem(problemText, rawAnswer, yakuItem) {
+      const translation = yakuItem || extractJapaneseUpToPeriod(problemText);
+      if (!rawAnswer) {
+        return { sentence: '⚠️ 解答が見つかりません', translation: translation, warnings: 1 };
+      }
+      return { sentence: buildFullSentence(rawAnswer), translation: translation, warnings: 0 };
+    }
+
+    // 種類C：問題に完全な英文があり、解答が和訳
+    function buildTranslationOnlyItem(problemText, rawAnswer, yakuItem) {
+      const sentence = firstLineTrim(problemText);
+      return {
+        sentence: sentence || '⚠️ 英文が見つかりません',
+        translation: yakuItem || (rawAnswer ? rawAnswer.trim() : ''),
+        warnings: sentence ? 0 : 1
+      };
+    }
+
+    // 1項目を種類判定して生成する
+    function buildWorksheetItem(num, ctx) {
+      const problemText = ctx.problemItems[num] || '';
+      const rawAnswer = (ctx.answerItems[num] || '').trim();
+      const yakuText = (ctx.yakuItems[num] && ctx.yakuItems[num].trim()) || '';
+      const letterKey = rawAnswer.toLowerCase();
+
+      // 空所を含む文を、折り返しの続きも含めて組み立てる
+      const sentenceCandidate = normalizeLineBlanks(buildSentenceCandidate(problemText));
+
+      let result;
+      if (Object.keys(ctx.letterOptions).length && /^[a-h]$/.test(letterKey) && ctx.letterOptions[letterKey]) {
+        result = buildBoxChoiceItem(problemText, letterKey, ctx.letterOptions, yakuText);
+      } else if (sentenceCandidate.includes(BLANK_TOKEN)) {
+        result = buildFillBlankItem(sentenceCandidate, rawAnswer, yakuText, problemText);
+      } else if (containsJapanese(problemText) || hasCommaWordBank(problemText)) {
+        result = buildWordOrderItem(problemText, ctx.answerItems[num], yakuText);
+      } else {
+        result = buildTranslationOnlyItem(problemText, ctx.answerItems[num], yakuText);
+      }
+
+      let warnings = result.warnings;
+      let translation = result.translation;
+      if (!translation) {
+        translation = '⚠️ 和文が見つかりません';
+        warnings++;
+      }
+      const sentence = result.sentence
+        ? result.sentence.replace(/\*/g, '').replace(/\s{2,}/g, ' ').trim()
+        : result.sentence;
+
+      return { line: `${num})　${sentence}; ${translation}`, warnings: warnings };
+    }
+
+    /* ---- 4-4. セクション単位の生成 ---- */
+
+    // ①②③…の大問
+    function buildNumberedSection(problemSection, answerSection) {
+      const kaisetsuIdx = answerSection.search(/解説/);
+      const answerListPart = kaisetsuIdx !== -1 ? answerSection.slice(0, kaisetsuIdx) : answerSection;
+
+      const ctx = {
+        answerItems: extractNumberedItems(answerListPart),
+        yakuItems: getTranslationItems(problemSection, answerSection),
+        problemItems: extractNumberedItems(problemSection),
+        letterOptions: extractLetterOptions(problemSection)
+      };
+
+      let nums = Object.keys(ctx.problemItems).sort(numSort);
+      if (nums.length === 0) nums = Object.keys(ctx.answerItems).sort(numSort);
+
+      const lines = [];
+      let warnings = 0;
+      nums.forEach(num => {
+        const item = buildWorksheetItem(num, ctx);
+        lines.push(item.line);
+        warnings += item.warnings;
+      });
+      return { lines: lines, warnings: warnings };
+    }
+
+    // [Give It a Try!]（例）と 1) 2) …）
+    function buildGiveItATrySection(problemSection, answerSection) {
+      // 「例)」は「0)」として同じ番号付き項目の処理に乗せる
+      const problemText = problemSection.replace(/例\)/, '0)');
+      const answerText = answerSection.replace(/例\)/, '0)');
+
+      const yakuIdx = answerText.search(/訳/);
+      const answerListPart = yakuIdx !== -1 ? answerText.slice(0, yakuIdx) : answerText;
+      const answerItems = extractNumberedItems(answerListPart);
+      const translationItems = getTranslationItems(problemText, answerText);
+
+      const lines = [];
+      let warnings = 0;
+      Object.keys(answerItems).sort(numSort).forEach(num => {
+        const sentence = buildFullSentence(answerItems[num]);
+        const translation = translationItems[num]
+          ? translationItems[num].trim()
+          : '⚠️ 訳が見つかりません';
+        if (!translationItems[num]) warnings++;
+        const label = (num === '0') ? '例)' : num + ')';
+        lines.push(`${label}　${sentence}; ${translation}`);
+      });
+      return { lines: lines, warnings: warnings };
+    }
+
+    /* ---- 4-5. 全体 ---- */
+
+    function generateWorksheet(problemText, answerText) {
+      const outputLines = [];
+      let warnings = 0;
+
+      // タイトル：問題の1行目を、空白2つ以上の手前で切ったもの
+      const firstLine = problemText.split('\n')[0] || '';
+      outputLines.push(firstLine.split(/\s{2,}/)[0].trim() || firstLine.trim());
+
+      const problemSections = splitMajorSections(problemText);
+      const answerSections = splitMajorSections(answerText);
+
+      // 実際に見つかった大問を番号順に並べ、最後に Give It a Try
+      const numericKeys = Object.keys(problemSections).filter(k => k !== 'give').sort(numSort);
+      const sectionKeys = numericKeys.concat(problemSections.give ? ['give'] : []);
+
+      sectionKeys.forEach(key => {
+        if (!problemSections[key] || !answerSections[key]) return;
+
+        const label = (key === 'give')
+          ? '[Give It a Try!]'
+          : (CIRCLED_DIGITS[parseInt(key, 10) - 1] || `(${key})`);
+        outputLines.push('', label);
+
+        try {
+          const builder = (key === 'give') ? buildGiveItATrySection : buildNumberedSection;
+          const section = builder(problemSections[key], answerSections[key]);
+          outputLines.push(...section.lines);
+          warnings += section.warnings;
+        } catch (e) {
+          outputLines.push(`⚠️ このセクションは自動解析に失敗しました（${e.message}）。手動で編集してください。`);
+          warnings++;
+        }
+      });
+
+      return { text: outputLines.join('\n'), warnings: warnings, summary: '' };
+    }
+
+
+    /* ---------------------------------------------------------------------
+     * 5. 教材形式（STEP／FRAME／EXERCISE A〜D）
+     *    「□ 01」形式の項目、選択肢①〜④が問題文中にある教材向け
+     * ------------------------------------------------------------------- */
+
+    const TB_CIRCLED = '[\\u2460-\\u2473]';   // ①〜⑳
+    const TB_CIRCLED_RE = new RegExp(TB_CIRCLED);
+    const TB_CIRCLED_GLOBAL_RE = new RegExp(TB_CIRCLED, 'g');
+
+    function isTextbookFormat(problemText) {
+      return /EXERCISE[\s　]*[A-Z][\s　]*>>/.test(problemText)
+        || /(^|\n)[ \t　]*FRAME[\s　]*\d+/.test(problemText);
+    }
+
+    /* ---- 5-1. 解析 ---- */
+
+    // 全文を「STEP → セクション（FRAME / A / B…）→ 項目」に分解する
+    function parseTextbook(text, isAnswer) {
+      const stepRe = /^[\s　]*■?[\s　]*STEP[\s　]*(\d+)/i;
+      const sectionRe = /^[\s　]*EXERCISE[\s　]+([A-Z])\b/i;
+      const frameRe = /^[\s　]*FRAME[\s　]*(\d+)[\s　]*(.*)$/;
+      const boxRe = /^[\s　]*□[\s　]*(\d+)[\s　]*(.*)$/;      // 問題側の項目
+      const answerNumRe = /^(\d{1,3})[\s　]+(.*)$/;           // 解答側の項目（行頭が数字）
+
+      const steps = [];
+      let step = null;
+      let section = null;
+      let item = null;
+
+      function ensureStep() {
+        if (!step) {
+          step = { no: '0', title: '', sections: [] };
+          steps.push(step);
+        }
+      }
+
+      function openSection(key) {
+        ensureStep();
+        section = step.sections.find(s => s.key === key);
+        if (!section) {
+          section = { key: key, items: [] };
+          step.sections.push(section);
+        }
+        item = null;
+      }
+
+      function addItem(num, label, head) {
+        item = { num: String(parseInt(num, 10)), label: label, head: head, lines: [] };
+        section.items.push(item);
+      }
+
+      text.replace(/\r/g, '').split('\n').forEach(line => {
+        let m;
+
+        if ((m = line.match(stepRe))) {
+          step = {
+            no: String(parseInt(m[1], 10)),
+            title: line.replace(/^[\s　]*■/, '').trim(),
+            sections: []
+          };
+          steps.push(step);
+          openSection('FRAME');
+        } else if ((m = line.match(sectionRe))) {
+          openSection(m[1].toUpperCase());
+        } else if ((m = line.match(frameRe))) {
+          if (!section || section.key !== 'FRAME') openSection('FRAME');
+          addItem(m[1], 'FRAME ' + m[1], m[2]);
+        } else if (!isAnswer && (m = line.match(boxRe))) {
+          if (!section) openSection('?');
+          addItem(m[1], m[1], m[2]);
+        } else if (isAnswer && section && section.key !== 'FRAME' && (m = line.match(answerNumRe))) {
+          addItem(m[1], m[1], m[2]);
+        } else if (item) {
+          item.lines.push(line);
+        }
+      });
+
+      return steps;
+    }
+
+    // 〈大学名〉を除き、空白類を1つにまとめる
+    function tbClean(str) {
+      return (str || '').replace(/〈[^〉]*〉/g, '').replace(/[\s　]+/g, ' ').trim();
+    }
+
+    // 和文用：OCR由来の不要な空白を除く（「 次の → 「次の など）
+    function tbCleanJapanese(str) {
+      return (str || '')
+        .replace(/[\s　]+/g, ' ')
+        .replace(/「 +/g, '「')
+        .replace(/ +」/g, '」')
+        .replace(/([^\x00-\x7F]) +(?=[^\x00-\x7F])/g, '$1')
+        .trim();
+    }
+
+    // 解答側の1項目を分類する
+    //   error  ：「④ talked ➡ talked about」（誤文訂正）
+    //   choice ：「② 和訳…」（選択肢の番号が先頭）
+    //   text   ：「英文…」（整序・語句補充）
+    function parseTextbookAnswer(answer) {
+      const head = (answer.head || '').trim();
+      const firstNonEmptyLine = (answer.lines.find(l => l.trim() !== '') || '').trim();
+
+      let m = head.match(new RegExp('^(' + TB_CIRCLED + ')[\\s　]*(.*?)[\\s　]*[➡→⇒][\\s　]*(.+)$'));
+      if (m) {
+        return {
+          type: 'error',
+          mark: m[1],
+          before: m[2].trim(),
+          after: m[3].trim(),
+          translation: tbCleanJapanese(firstNonEmptyLine)
+        };
+      }
+
+      m = head.match(new RegExp('^(' + TB_CIRCLED + ')[\\s　]*(.*)$'));
+      if (m) {
+        // 訳は1行目の残り＋インデントされていない続きの行（会話文など）
+        const parts = [m[2].trim()];
+        for (const line of answer.lines) {
+          if (line.trim() === '' || /^[\s　]/.test(line)) break;
+          parts.push(line.trim());
+        }
+        return { type: 'choice', mark: m[1], translation: tbCleanJapanese(parts.join(' ')) };
+      }
+
+      return { type: 'text', english: head, translation: tbCleanJapanese(firstNonEmptyLine) };
+    }
+
+    // 問題側にある和文指示（整序問題など）を取り出す。なければ ''
+    function extractProblemJapanese(problemText) {
+      const text = problemText.replace(/〈[^〉]*〉/g, '').replace(/［[^］]*］/g, '');
+      const re = /[\u3040-\u30FF\u4E00-\u9FFF。、，．「」]/g;
+      let last = -1;
+      let m;
+      while ((m = re.exec(text)) !== null) last = m.index;
+      return last === -1 ? '' : tbCleanJapanese(text.slice(0, last + 1));
+    }
+
+    /* ---- 5-2. 種類別の生成 ---- */
+
+    // 選択式：問題文の空所に、解答の番号に対応する選択肢を入れる
+    function buildTextbookChoice(problemText, parsed) {
+      const optionsStart = problemText.search(TB_CIRCLED_RE);
+      const stem = tbClean(optionsStart === -1 ? problemText : problemText.slice(0, optionsStart));
+      const optionsText = optionsStart === -1 ? '' : problemText.slice(optionsStart);
+
+      const options = {};
+      const optionRe = new RegExp('(' + TB_CIRCLED + ')([^\\u2460-\\u2473]*)', 'g');
+      let m;
+      while ((m = optionRe.exec(optionsText)) !== null) options[m[1]] = tbClean(m[2]);
+
+      const chosen = options[parsed.mark];
+      const blankRe = /[（(]\s*[）)]/;
+      if (!chosen) return { sentence: '⚠️ ' + stem, warnings: 1 };
+      // 空所がなければ（下線部の言い換え問題など）英文をそのまま使う
+      return { sentence: blankRe.test(stem) ? stem.replace(blankRe, ' ' + chosen + ' ') : stem, warnings: 0 };
+    }
+
+    // 誤文訂正：番号の位置にある誤り部分を「➡」の右側に差し替える
+    function buildTextbookCorrection(problemText, parsed) {
+      let sentence = problemText.replace(/〈[^〉]*〉/g, '').replace(/[\t\n]+/g, ' ');
+      const markPos = sentence.indexOf(parsed.mark);
+      let applied = false;
+
+      if (markPos !== -1 && parsed.before) {
+        const prefix = sentence.slice(0, markPos);
+        const rest = sentence.slice(markPos + 1);
+        const restTrimmed = rest.replace(/^[\s　]+/, '');
+        const before = parsed.before.toLowerCase();
+
+        if (restTrimmed.toLowerCase().startsWith(before)) {
+          sentence = prefix + parsed.after + restTrimmed.slice(parsed.before.length);
+          applied = true;
+        } else {
+          const k = rest.toLowerCase().indexOf(before);
+          if (k !== -1) {
+            sentence = prefix + rest.slice(0, k) + parsed.after + rest.slice(k + parsed.before.length);
+            applied = true;
+          }
+        }
+      }
+
+      sentence = sentence.replace(TB_CIRCLED_GLOBAL_RE, '');
+      return applied
+        ? { sentence: sentence, warnings: 0 }
+        : { sentence: '⚠️ ' + sentence, warnings: 1 };
+    }
+
+    // 整序・語句補充：解答の英文が完成文。和訳は問題文の日本語を優先
+    function buildTextbookCompleteSentence(problemText, parsed) {
+      let warnings = 0;
+      const sentence = parsed.english.replace(/[（(][^）)]*不要[）)]/g, '');
+      if (!sentence.trim()) warnings++;
+
+      let translation = parsed.translation;
+      const problemJapanese = extractProblemJapanese(problemText);
+      if (problemJapanese) {
+        translation = problemJapanese;
+      } else if (/(という意味を表|を表すので|と考える|に注意|で「[^」]*」という意味)/.test(translation)) {
+        // 訳ではなく解説の行を拾った可能性
+        translation = '⚠️ ' + translation;
+        warnings++;
+      }
+      return {
+        sentence: sentence.trim() ? sentence : '⚠️ 英文が見つかりません',
+        translation: translation,
+        warnings: warnings
+      };
+    }
+
+    function buildTextbookItem(item, answer) {
+      if (!answer) return { sentence: '⚠️ 解答が見つかりません', translation: '', warnings: 1 };
+
+      const problemText = [item.head].concat(item.lines).join('\n');
+      const parsed = parseTextbookAnswer(answer);
+
+      let result;
+      if (parsed.type === 'choice') {
+        result = buildTextbookChoice(problemText, parsed);
+      } else if (parsed.type === 'error') {
+        result = buildTextbookCorrection(problemText, parsed);
+      } else {
+        result = buildTextbookCompleteSentence(problemText, parsed);
+      }
+
+      let warnings = result.warnings;
+      let translation = result.translation !== undefined ? result.translation : parsed.translation;
+      if (!translation) {
+        translation = '⚠️ 和訳が見つかりません';
+        warnings++;
+      }
+      const sentence = result.sentence
+        .replace(/\*/g, '')
+        .replace(/\s+([.,?!;:])/g, '$1')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+      return { sentence: sentence, translation: translation, warnings: warnings };
+    }
+
+    /* ---- 5-3. 全体 ---- */
+
+    function generateTextbook(problemText, answerText) {
+      const problemSteps = parseTextbook(problemText, false);
+      const answerSteps = parseTextbook(answerText, true);
+
+      // 「STEP番号|セクション|項目番号」で解答を引けるようにする
+      const answerMap = {};
+      answerSteps.forEach(step => step.sections.forEach(section => section.items.forEach(item => {
+        answerMap[`${step.no}|${section.key}|${item.num}`] = item;
+      })));
+
+      const outputLines = [];
+      let warnings = 0;
+      let count = 0;
+
+      problemSteps.forEach(step => {
+        if (!step.sections.some(section => section.items.length)) return;
+
+        if (outputLines.length) outputLines.push('');
+        outputLines.push(step.title || ('STEP ' + step.no));
+
+        step.sections.forEach(section => {
+          if (!section.items.length) return;
+
+          outputLines.push('', section.key === 'FRAME' ? 'FRAME' : 'EXERCISE ' + section.key);
+          section.items.forEach(item => {
+            const built = buildTextbookItem(item, answerMap[`${step.no}|${section.key}|${item.num}`]);
+            outputLines.push(`${item.label})　${built.sentence}; ${built.translation}`);
+            warnings += built.warnings;
+            count++;
+          });
+        });
+      });
+
+      return { text: outputLines.join('\n'), warnings: warnings, count: count };
+    }
+
+
+    /* ---------------------------------------------------------------------
+     * 6. 生成ボタン：入力形式を判定して振り分ける
+     * ------------------------------------------------------------------- */
+
+    function generate() {
+      const problemText = $('problemInput').value;
+      const answerText = $('answerInput').value;
+
+      if (!problemText.trim() || !answerText.trim()) {
+        setStatus('問題と解答の両方を貼り付けてください。', true);
+        return;
+      }
+
+      // 教材形式（STEP / FRAME / EXERCISE）
+      if (isTextbookFormat(problemText)) {
+        const result = generateTextbook(problemText, answerText);
+        $('output').value = result.text;
+
+        if (result.count === 0) {
+          setStatus('問題が1件も見つかりませんでした。問題文の貼り付け内容を確認してください。', true);
+        } else if (result.warnings > 0) {
+          setStatus(`教科書形式で ${result.count} 問を生成しました。⚠️ が ${result.warnings} 箇所あります。出力欄で確認・修正してください。`, true);
+        } else {
+          setStatus(`教科書形式で ${result.count} 問を生成しました。内容を確認してください。`, false);
+        }
+        return;
+      }
+
+      // プリント形式（①②③…の大問）
+      const result = generateWorksheet(problemText, answerText);
+      $('output').value = result.text;
+
+      if (result.warnings > 0) {
+        setStatus(`生成しました。⚠️ が ${result.warnings} 箇所あります。出力欄で確認・修正してください。`, true);
+      } else {
+        setStatus('生成しました。内容を確認してください。', false);
+      }
+    }
+  </script>
 </body>
 </html>
