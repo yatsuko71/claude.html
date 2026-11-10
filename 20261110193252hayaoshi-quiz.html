@@ -3,275 +3,309 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>はやおしクイズ</title>
+<meta name="theme-color" content="#F6F4EF">
+<title>テアゲ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233E63DD'/%3E%3Crect x='19.5' y='27' width='26' height='24' rx='10' fill='%23fff'/%3E%3Cg stroke='%23fff' stroke-width='5.6' stroke-linecap='round'%3E%3Cline x1='23' y1='31' x2='23' y2='16.5'/%3E%3Cline x1='29.8' y1='30' x2='29.8' y2='11.5'/%3E%3Cline x1='36.6' y1='30' x2='36.6' y2='12.5'/%3E%3Cline x1='43' y1='32' x2='43' y2='18.5'/%3E%3Cline x1='21.5' y1='43' x2='14' y2='34.5'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
 <!-- 端末間通信（WebRTC）ライブラリと、参加用QRコード生成ライブラリ -->
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <style>
 :root{
-  --bg1:#3b1f8f; --bg2:#22105c; --ink:#1f1f2e; --muted:#6b6b80; --line:#e3e1ee;
-  --c0:#e21b3c; --c1:#1368ce; --c2:#d89e00; --c3:#26890c;
-  --ok:#26890c; --ng:#e21b3c; --accent:#5b2bd6;
-  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","BIZ UDPGothic","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --bg:#F6F4EF; --card:#fff; --ink:#1d1d1f; --sub:#6b6b6b; --line:#E4E1D8; --line2:#d3cfc3;
+  --brand:#3E63DD; --ok:#2F9E6E; --ok-t:#E7F5EE; --ng:#E5484D; --ng-t:#FDECEC;
+  --a:#E5484D; --a-t:#FDECEC; --a-b:#F5C2C3;
+  --b:#3E63DD; --b-t:#EBF0FD; --b-b:#C3D0F6;
+  --c:#D9930D; --c-t:#FDF4E1; --c-b:#F1D79E;
+  --d:#2F9E6E; --d-t:#E7F5EE; --d-b:#B4DEC8;
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{color:var(--ink);background:#f4f3f9;-webkit-tap-highlight-color:transparent}
-button{font:inherit;cursor:pointer}
-input,textarea,select{font:inherit}
+body{background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer;color:inherit}
+input,textarea,select{font:inherit;color:var(--ink)}
 .hidden{display:none!important}
- 
-/* 共通部品 */
-.btn{border:0;border-radius:8px;padding:.6em 1.1em;font-weight:700;background:#e9e6f5;color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.15)}
-.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15)}
-.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.btn.primary{background:var(--accent);color:#fff}
-.btn.go{background:var(--ok);color:#fff}
-.btn.danger{background:#fde8eb;color:#b0102a}
+
+/* ---------- 共通部品 ---------- */
+.btn{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:.55em 1.05em;font-weight:700;line-height:1.2;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--line2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#3557c8}
+.btn.danger{color:#c4252b}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--sub)}
+.btn.quiet:hover{background:rgba(0,0,0,.05)}
 .btn.small{padding:.35em .7em;font-size:.88em}
-.btn.ghost{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:.7em 1.2em;border-radius:8px;z-index:99;font-weight:700;max-width:90vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.btn.big{font-size:20px;padding:.6em 1.4em;border-radius:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.7em 1.2em;border-radius:10px;z-index:99;font-weight:700;max-width:90vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
-.shape{display:inline-flex;width:1.3em;height:1.3em;flex:none}
-.shape svg{width:100%;height:100%;fill:#fff}
- 
-/* 紫背景の画面 */
-.stage{min-height:100%;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:#fff}
-.center-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
-.logo{font-size:clamp(36px,8vw,72px);margin:0;letter-spacing:.05em;text-shadow:0 4px 0 rgba(0,0,0,.25)}
-.sub{opacity:.85;margin:.4em 0 2em}
-.landing-btns{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-.big-btn{border:0;border-radius:14px;padding:28px 40px;min-width:230px;font-size:28px;font-weight:800;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:6px}
-.big-btn small{font-size:15px;font-weight:600;opacity:.9}
-.big-btn.host{background:var(--c1)}
-.big-btn.join{background:var(--c3)}
-.big-btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.25)}
- 
-/* 白背景のページ（先生の管理画面） */
-.page{max-width:960px;margin:0 auto;padding:16px 16px 80px}
-.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.topbar h2{margin:0;font-size:22px;flex:1}
-.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.key{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--k);color:#fff;font-weight:900;flex:none;width:1.6em;height:1.6em;font-size:.9em;line-height:1}
+.pill{display:inline-flex;align-items:center;gap:.3em;border-radius:999px;padding:.2em .75em;font-weight:700;font-size:.85em;background:var(--card);border:1.5px solid var(--line);color:var(--sub);white-space:nowrap}
+.logo{display:inline-flex;align-items:center;gap:.35em;font-weight:900;letter-spacing:.04em;color:var(--ink);line-height:1}
+.logo svg{width:1.25em;height:1.25em;flex:none}
+
+/* ---------- 入口 ---------- */
+.center{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.hero .logo{font-size:clamp(44px,9vw,76px)}
+.hero p{color:var(--sub);margin:.8em 0 2.2em;font-weight:700}
+.entry{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;width:min(560px,100%)}
+.entry button{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:22px 20px;text-align:left;display:flex;gap:14px;align-items:center;transition:border-color .15s}
+.entry button:hover{border-color:var(--brand)}
+.entry .ic{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex:none;background:var(--kt);color:var(--k)}
+.entry b{display:block;font-size:20px}
+.entry small{color:var(--sub);font-weight:700}
+
+/* ---------- 先生の管理画面 ---------- */
+.page{max-width:920px;margin:0 auto;padding:16px 16px 80px}
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 18px}
+.topbar .logo{font-size:24px}
+.topbar h2{margin:0;font-size:20px;flex:1}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
 .set-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .set-row .info{flex:1;min-width:180px}
-.set-row .title{font-weight:800;font-size:18px}
-.set-row .meta{color:var(--muted);font-size:14px}
-.empty{color:var(--muted);text-align:center;padding:30px}
- 
-/* エディタ */
-.title-input{width:100%;font-size:20px;font-weight:700;padding:.5em .7em;border:2px solid var(--line);border-radius:8px}
-.qcard .qhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.qcard .qhead b{font-size:17px}
+.set-row .title{font-weight:900;font-size:18px}
+.set-row .meta{color:var(--sub);font-size:14px;font-weight:700;margin-top:2px}
+.empty{color:var(--sub);text-align:center;padding:30px}
+.title-input{width:100%;font-size:20px;font-weight:900;padding:.5em .7em;border:1.5px solid var(--line);border-radius:10px;background:var(--bg)}
+.qcard .qhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.qcard .qhead b{font-size:16px}
 .qcard .qhead .sp{flex:1}
-.qcard textarea{width:100%;min-height:60px;padding:.5em .7em;border:2px solid var(--line);border-radius:8px;resize:vertical;font-size:16px}
-.qcard select{padding:.3em;border-radius:6px;border:1px solid var(--line)}
-.type-badge{font-size:12px;font-weight:800;padding:.2em .6em;border-radius:999px;background:#ece6ff;color:var(--accent)}
+.qcard textarea{width:100%;min-height:60px;padding:.55em .7em;border:1.5px solid var(--line);border-radius:10px;resize:vertical;font-size:16px;background:var(--bg)}
+.qcard select{padding:.3em .4em;border-radius:8px;border:1.5px solid var(--line);background:var(--card);font-weight:700}
 .choices-edit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.ch-edit{display:flex;align-items:center;gap:6px;border-radius:8px;padding:5px;background:var(--c)}
-.ch-edit input[type=text]{flex:1;min-width:0;border:0;border-radius:6px;padding:.45em .6em;font-size:15px}
-.ch-edit .cor{display:flex;align-items:center;gap:3px;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;padding:0 4px}
-.ch-edit .cor input{width:18px;height:18px;margin:0}
-.ch-edit.is-correct{outline:4px solid #111;outline-offset:1px}
+.ch-edit{display:flex;align-items:center;gap:8px;border-radius:10px;padding:6px 8px;background:var(--kt);border:1.5px solid var(--kb)}
+.ch-edit .key{font-size:15px}
+.ch-edit input[type=text]{flex:1;min-width:0;border:0;border-radius:7px;padding:.45em .6em;font-size:15px;background:rgba(255,255,255,.85)}
+.ch-edit .cor{display:flex;align-items:center;gap:3px;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;color:var(--sub)}
+.ch-edit .cor input{width:17px;height:17px;margin:0;accent-color:var(--k)}
+.ch-edit.is-correct{border:2px solid var(--k)}
+.ch-edit.is-correct .cor{color:var(--k)}
 .tf-edit{display:flex;gap:10px;margin-top:8px}
-.tfb{flex:1;border:0;border-radius:10px;background:var(--c);color:#fff;font-size:22px;font-weight:900;padding:.5em;opacity:.4}
-.tfb.on{opacity:1;outline:4px solid #111;outline-offset:1px}
+.tfb{flex:1;border-radius:10px;background:var(--kt);border:1.5px solid var(--kb);font-size:20px;font-weight:900;padding:.45em;color:var(--sub)}
+.tfb .g{color:var(--k);font-size:1.3em;margin-right:.2em}
+.tfb.on{border:2px solid var(--k);color:var(--ink)}
 .text-edit{margin-top:8px}
-.text-edit input{width:100%;padding:.55em .7em;border:2px solid var(--line);border-radius:8px;font-size:16px}
-.qwarn{color:#b0102a;font-size:13px;margin-top:6px;font-weight:700}
-.csv-box textarea{width:100%;min-height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;padding:.5em;border:2px solid var(--line);border-radius:8px}
-.help{color:var(--muted);font-size:13px;line-height:1.6}
-.help code{background:#f0eef7;padding:1px 4px;border-radius:4px}
+.text-edit input{width:100%;padding:.55em .7em;border:1.5px solid var(--line);border-radius:10px;font-size:16px;background:var(--bg)}
+.qwarn{color:#c4252b;font-size:13px;margin-top:6px;font-weight:700}
+.qwarn:empty{display:none}
+.csv-box textarea{width:100%;min-height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;padding:.5em;border:1.5px solid var(--line);border-radius:10px;background:var(--bg)}
+.help{color:var(--sub);font-size:13px;line-height:1.7}
+.help code{background:var(--bg);border:1px solid var(--line);padding:0 4px;border-radius:4px}
 .row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.savestate{color:var(--muted);font-size:13px}
+.savestate{color:var(--sub);font-size:13px;font-weight:700}
 @media (max-width:600px){.choices-edit{grid-template-columns:1fr}}
- 
-/* ロビー */
-.lobby{min-height:100vh;display:flex;flex-direction:column}
-.lobby-head{display:flex;align-items:center;gap:10px;padding:10px 16px;flex-wrap:wrap}
-.lobby-head .ttl{flex:1;font-weight:800;font-size:20px}
-.join-panel{display:flex;gap:24px;align-items:center;justify-content:center;flex-wrap:wrap;background:#fff;color:var(--ink);margin:0 16px;border-radius:14px;padding:16px 24px}
-.join-panel .lbl{font-size:18px;color:var(--muted);font-weight:700}
-.pin{font-size:clamp(56px,10vw,110px);font-weight:900;letter-spacing:.08em;line-height:1}
-.join-url{font-size:14px;word-break:break-all;color:var(--muted);max-width:420px}
-.qr img{width:180px;height:180px;image-rendering:pixelated;display:block}
-.status{font-weight:700;padding:.4em .8em;border-radius:999px;background:rgba(255,255,255,.15);font-size:14px}
-.status.err{background:#ffd5db;color:#8a0016}
-.lobby-body{flex:1;padding:16px}
-.lobby-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.count{font-size:26px;font-weight:800;background:rgba(0,0,0,.25);padding:.25em .8em;border-radius:10px}
-.opts{display:flex;gap:14px;flex-wrap:wrap;flex:1}
-.opts label{display:flex;align-items:center;gap:5px;font-weight:600;cursor:pointer}
-.players{display:flex;flex-wrap:wrap;gap:12px}
-.pchip{background:#fff;color:var(--ink);border:0;border-radius:10px;padding:.35em .9em;font-weight:800;font-size:clamp(20px,2.4vw,30px);animation:pop .25s;display:flex;align-items:center;gap:.3em}
-.pchip .ic{font-size:1.25em}
-.pchip.off{opacity:.45}
-.pchip:hover{text-decoration:line-through}
-.waiting-msg{opacity:.8;font-size:20px;margin-top:20px;text-align:center}
-.warn-box{background:#fff4d6;color:#6b4b00;border-radius:10px;padding:10px 14px;margin:10px 16px 0;font-size:14px;line-height:1.6}
-@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
- 
-/* 出題画面（先生）— iPadをプロジェクターに映しても読める大きさ。文字は枠に合わせて自動で縮む */
-.game{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.game-head{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:.8vh 1.2vw;font-weight:800;font-size:min(2.6vh,1.8vw)}
-.game-head .grow{flex:1}
-.q-text{flex:0 0 24vh;background:#fff;color:var(--ink);margin:0 1.2vw;border-radius:12px;padding:1.2vh 2vw;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;line-height:1.3;overflow:hidden}
+
+/* ---------- ロビー ---------- */
+.lobby{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:12px 18px 18px;gap:14px}
+.bar-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bar-top .logo{font-size:22px}
+.bar-top .ttl{flex:1;font-weight:700;color:var(--sub);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.join-panel{display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 28px}
+.join-panel .lbl{font-size:16px;color:var(--sub);font-weight:700}
+.pin{font-size:clamp(60px,11vw,120px);font-weight:900;letter-spacing:.06em;line-height:1.05;font-variant-numeric:tabular-nums}
+.join-url{font-size:14px;word-break:break-all;color:var(--sub);max-width:440px;font-weight:700}
+.qr img{width:170px;height:170px;image-rendering:pixelated;display:block}
+.status{font-weight:700;font-size:13px;color:var(--sub);display:inline-flex;align-items:center;gap:.4em}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.status.ok::before{background:var(--ok)}
+.status.err{color:#c4252b}
+.status.err::before{background:var(--ng)}
+.lobby-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.count{font-size:28px;font-weight:900}
+.count small{font-size:16px;color:var(--sub);margin-left:.2em}
+.opts{display:flex;gap:16px;flex-wrap:wrap;flex:1}
+.opts label{display:flex;align-items:center;gap:6px;font-weight:700;cursor:pointer;color:var(--sub);font-size:15px}
+.opts input{width:17px;height:17px;accent-color:var(--brand)}
+.players{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
+.pchip{background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:.25em .9em .25em .35em;font-weight:900;font-size:clamp(20px,2.3vw,28px);animation:pop .25s;display:flex;align-items:center;gap:.3em}
+.pchip .ic{font-size:1.2em;width:1.5em;height:1.5em;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:50%}
+.pchip.off{opacity:.4}
+.pchip:hover{border-color:var(--ng);text-decoration:line-through}
+.waiting{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--sub);font-weight:700;gap:6px;text-align:center}
+.waiting .dots{display:flex;gap:8px;margin-bottom:6px}
+.waiting .dots i{width:10px;height:10px;border-radius:50%;background:var(--line2);animation:blink 1.2s infinite}
+.waiting .dots i:nth-child(2){animation-delay:.2s}.waiting .dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{50%{background:var(--brand)}}
+.warn-box{background:var(--c-t);border:1.5px solid var(--c-b);color:#6b4b00;border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.6;font-weight:700}
+@keyframes pop{from{transform:scale(.8)}to{transform:scale(1)}}
+
+/* ---------- 出題画面（プロジェクター向け。文字は枠に合わせて自動で縮む） ---------- */
+.game{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding:1.2vh 1.4vw 1.6vh;gap:1.4vh}
+.g-head{flex:0 0 auto;display:flex;align-items:center;gap:1vw;font-size:min(2.4vh,1.6vw)}
+.g-head .logo{font-size:1.25em}
+.g-head .grow{flex:1}
+.g-head .pill{font-size:1em}
+.g-head .btn{font-size:.95em}
+.q-text{flex:0 0 25vh;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:900;line-height:1.3;overflow:hidden;padding:0 2vw}
 .fit{display:block;width:100%;white-space:pre-wrap;overflow-wrap:normal;word-break:normal}
 .fit.brk{overflow-wrap:anywhere}
-.q-mid{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:1.2vh 3vw;gap:2vw}
-.q-mid .kind{font-weight:800;font-size:min(3.4vh,2.4vw);opacity:.85}
-.timer{width:min(15vh,12vw);height:min(15vh,12vw);border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:min(7.5vh,6vw);font-weight:900;box-shadow:0 0 0 .6vh rgba(255,255,255,.2);flex:none}
-.timer.hurry{background:var(--c0);animation:pulse .5s infinite alternate}
-@keyframes pulse{to{transform:scale(1.06)}}
-.answered{text-align:center;font-weight:800;font-size:min(3vh,2.2vw)}
-.answered .n{font-size:min(7.5vh,6vw);display:block;line-height:1.1}
-.skip-btn{font-size:min(2.6vh,1.8vw)!important}
-.ans-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:1.2vh 1vw;padding:0 1.2vw 1.2vh}
+.meta{flex:0 0 auto;display:flex;align-items:center;gap:2vw;font-size:min(3vh,2.1vw);font-weight:900;min-height:6vh}
+.tbar{flex:1;height:1.1vh;min-height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:var(--ink);border-radius:99px}
+.tbar.hurry i{background:var(--ng)}
+.secs{font-variant-numeric:tabular-nums;width:2.4em;text-align:right}
+.secs.hurry{color:var(--ng)}
+.done{color:var(--sub);white-space:nowrap}
+.done b{color:var(--ink);font-variant-numeric:tabular-nums}
+.meta .verdict{flex:1;display:flex;align-items:center;gap:.5em}
+.meta .btn{font-size:min(2.6vh,1.8vw)}
+.ans-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:1.4vh 1vw}
 .ans-grid.two{grid-template-rows:minmax(0,1fr)}
-.ans{background:var(--c);color:#fff;border-radius:12px;display:flex;align-items:center;gap:1.4vw;padding:1vh 1.6vw;font-weight:800;line-height:1.25;text-shadow:0 2px 0 rgba(0,0,0,.2);position:relative;overflow:hidden;min-height:0}
-.ans .shape{width:min(8vh,6vw);height:min(8vh,6vw)}
+.ans{background:var(--kt);border:.35vh solid var(--kb);border-radius:2vh;display:flex;align-items:center;gap:1.4vw;padding:1vh 1.8vw;font-weight:900;line-height:1.25;position:relative;overflow:hidden;min-height:0;transition:opacity .4s,background .3s}
+.ans .key{width:min(8.5vh,6vw);height:min(8.5vh,6vw);font-size:min(4.6vh,3.3vw)}
 .ans .txt{flex:1;min-width:0}
-.ans .mark{font-size:min(8vh,6vw);flex:none}
-.ans.dim{opacity:.28}
 .ans.blank{visibility:hidden}
+.ans .cnt{flex:none;font-size:min(4vh,2.8vw);font-weight:900;color:var(--sub);font-variant-numeric:tabular-nums}
+.ans .prop{position:absolute;left:0;bottom:0;height:.9vh;background:var(--k);opacity:.35;transition:width .8s ease}
+.ans.correct{background:var(--k);border-color:var(--k);color:#fff}
+.ans.correct .key{background:#fff;color:var(--k)}
+.ans.correct .cnt{color:#fff}
+.ans.correct .prop{background:#fff;opacity:.45}
+.ans.dim{opacity:.35}
 .ans.tfbox{justify-content:center}
-.ans.tfbox .tfglyph{font-size:min(26vh,16vw);line-height:1;font-weight:900}
-.ans.tfbox .mark{position:absolute;right:2vw;top:50%;transform:translateY(-50%)}
-.text-panel{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;margin:0 1.2vw 1.2vh;border-radius:12px;background:rgba(255,255,255,.12);font-size:min(6vh,4.4vw);font-weight:900;text-align:center;padding:2vh}
-.text-panel .big{font-size:min(16vh,11vw);line-height:1}
-.ready-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;padding:2vh 2vw;text-align:center;min-height:0}
-.ready-screen .qn{font-size:min(5vh,3.6vw);font-weight:900;opacity:.95}
-.ready-screen .q-text{flex:0 0 42vh;margin:0;width:100%}
-.ready-bar{width:min(600px,80vw);height:1.2vh;background:rgba(255,255,255,.2);border-radius:1vh;overflow:hidden}
-.ready-bar i{display:block;height:100%;background:#fff;width:0;animation:fill 3.5s linear forwards}
+.ans.tfbox .tfg{font-size:min(28vh,17vw);line-height:1;color:var(--k);font-weight:900}
+.ans.tfbox.correct .tfg{color:#fff}
+.ans.tfbox .cnt{position:absolute;right:2vw;bottom:2vh}
+.text-panel{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;border:.35vh dashed var(--line2);border-radius:2vh;font-size:min(5vh,3.6vw);font-weight:900;color:var(--sub);text-align:center;padding:2vh}
+.text-panel .pen{width:min(16vh,11vw);height:min(16vh,11vw);border-radius:50%;background:var(--b-t);color:var(--b);display:flex;align-items:center;justify-content:center;font-size:min(9vh,6vw)}
+.ready{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vh;min-height:0}
+.ready .pill{font-size:min(3vh,2.2vw)}
+.ready .q-text{flex:0 0 45vh;width:100%}
+.ready-bar{width:min(520px,60vw);height:1vh;min-height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.ready-bar i{display:block;height:100%;background:var(--ink);width:0;animation:fill 3.5s linear forwards}
 @keyframes fill{to{width:100%}}
-.dist{flex:0 0 22vh;display:flex;align-items:flex-end;justify-content:center;gap:4vw;padding:1vh 4vw}
-.dist .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:min(150px,16vw);height:100%}
-.dist .bar{width:100%;background:var(--c);border-radius:6px 6px 0 0;min-height:4px;transition:height .6s}
-.dist .lab{background:var(--c);width:100%;border-radius:0 0 6px 6px;display:flex;align-items:center;justify-content:center;gap:.4em;padding:.4vh;font-weight:900;font-size:min(4vh,3vw)}
-.dist .lab .shape{width:1em;height:1em}
-.dist .col.dim{opacity:.35}
-.next-row{flex:0 0 auto;display:flex;justify-content:flex-end;align-items:center;padding:0 1.2vw 1vh;gap:1vw}
-.next-row .hint{flex:1;font-size:min(2.6vh,1.8vw);opacity:.8;font-weight:700}
-.next-row .btn.go{font-size:min(3.2vh,2.2vw)}
-.accept{flex:0 0 auto;margin:1.2vh 1.2vw 0;background:var(--ok);border-radius:12px;padding:1vh 1.6vw;font-size:min(5.5vh,4vw);font-weight:900;text-align:center;line-height:1.3;word-break:break-word}
-.accept.survey{background:rgba(255,255,255,.18)}
-.groups{flex:1;min-height:0;overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:1.2vh 1vw;padding:1.4vh 1.2vw}
-.grp{background:#fff;color:var(--ink);border:0;border-radius:12px;padding:.25em .7em;font-size:min(5vh,3.6vw);font-weight:900;display:flex;gap:.4em;align-items:center;box-shadow:0 3px 0 rgba(0,0,0,.2);max-width:100%;word-break:break-word;text-align:left}
-.grp.ok{background:#d9f7cf;outline:.5vh solid #7be35d}
-.grp .cnt{background:#333;color:#fff;border-radius:999px;padding:0 .5em;font-size:.65em;flex:none}
-.grp .ck{color:var(--ok)}
+.accept{flex:0 0 auto;background:var(--ok-t);border:.35vh solid #B4DEC8;color:#1d6b49;border-radius:2vh;padding:1.2vh 2vw;font-size:min(5vh,3.6vw);font-weight:900;text-align:center;line-height:1.3;word-break:break-word}
+.accept.survey{background:var(--card);border-color:var(--line);color:var(--sub)}
+.groups{flex:1;min-height:0;overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:1.4vh 1vw}
+.grp{background:var(--card);border:.3vh solid var(--line);border-radius:1.6vh;padding:.3em .8em;font-size:min(4.8vh,3.4vw);font-weight:900;display:flex;gap:.45em;align-items:center;max-width:100%;word-break:break-word;text-align:left;animation:pop .3s}
+.grp.ok{background:var(--ok-t);border-color:var(--ok);color:#1d6b49}
+.grp .cnt{background:var(--bg);color:var(--sub);border-radius:999px;padding:0 .5em;font-size:.62em;flex:none}
+.grp.ok .cnt{background:#fff;color:var(--ok)}
 .grp[disabled]{cursor:default}
- 
-/* ランキング */
-.board{flex:1;display:flex;flex-direction:column;align-items:center;padding:1vh 2vw;overflow:auto;min-height:0}
-.board h2{font-size:min(6vh,4.4vw);margin:1vh 0 2.4vh;text-align:center}
-.rank-list{width:min(900px,94vw);display:flex;flex-direction:column;gap:1.4vh}
-.rank-item{background:#fff;color:var(--ink);border-radius:12px;padding:1.2vh 2vw;display:flex;align-items:center;gap:1.4vw;font-size:min(5vh,3.4vw);font-weight:900;animation:pop .3s both}
-.rank-item .r{width:1.6em;text-align:center;color:var(--accent)}
+.hint{font-size:min(2.4vh,1.7vw);color:var(--sub);font-weight:700}
+.foot-row{flex:0 0 auto;display:flex;justify-content:flex-end;align-items:center;gap:1vw}
+.foot-row .btn{font-size:min(3vh,2.1vw)}
+
+/* ---------- ランキング・結果 ---------- */
+.board{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;overflow:auto}
+.board h2{font-size:min(5.4vh,4vw);margin:1vh 0 3vh;font-weight:900;text-align:center}
+.rank-list{width:min(900px,94vw);display:flex;flex-direction:column;gap:1.2vh}
+.rank-item{background:var(--card);border:.3vh solid var(--line);border-radius:1.8vh;padding:1.2vh 1.8vw;display:flex;align-items:center;gap:1.4vw;font-size:min(4.6vh,3.2vw);font-weight:900;animation:slide .35s}
+.rank-item.top{border-color:var(--c-b);background:#FFFBF2}
+@keyframes slide{from{transform:translateY(14px)}to{transform:none}}
+.rank-item .r{width:1.5em;height:1.5em;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:.8em;flex:none}
+.rank-item.top .r{background:var(--c);color:#fff}
 .rank-item .ic{font-size:1.1em}
 .rank-item .nm{flex:1;word-break:break-all}
-.rank-item .plus{font-size:.6em;color:var(--ok)}
-.podium{display:flex;align-items:flex-end;justify-content:center;gap:2vw;margin:1vh 0 3vh}
-.pod{display:flex;flex-direction:column;align-items:center;width:min(240px,28vw)}
-.pod .ic{font-size:min(9vh,7vw);line-height:1.1}
-.pod .nm{font-size:min(4.6vh,3.4vw);font-weight:900;margin-bottom:.4vh;text-align:center;word-break:break-all}
-.pod .sc{font-weight:800;opacity:.9;margin-bottom:.8vh;font-size:min(3vh,2.2vw)}
-.pod .block{width:100%;border-radius:8px 8px 0 0;display:flex;align-items:flex-start;justify-content:center;font-size:min(8vh,6vw);font-weight:900;padding-top:1vh;animation:rise .8s both}
-.pod.p1 .block{height:28vh;background:#f4c430;color:#5a4300}
-.pod.p2 .block{height:20vh;background:#c9ced6;color:#3d424a}
-.pod.p3 .block{height:14vh;background:#d08b4a;color:#4a2a0c}
+.rank-item .plus{font-size:.6em;color:var(--ok);background:var(--ok-t);border-radius:999px;padding:.1em .6em}
+.rank-item .sc{font-variant-numeric:tabular-nums}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:1.6vw;margin:1vh 0 3vh}
+.pod{display:flex;flex-direction:column;align-items:center;width:min(230px,27vw)}
+.pod .ic{font-size:min(9vh,6.6vw);line-height:1.15}
+.pod .nm{font-size:min(4.2vh,3vw);font-weight:900;text-align:center;word-break:break-all}
+.pod .sc{font-weight:700;color:var(--sub);margin:.4vh 0 1vh;font-size:min(2.8vh,2vw)}
+.pod .block{width:100%;border-radius:1.8vh 1.8vh 0 0;display:flex;align-items:flex-start;justify-content:center;font-size:min(7vh,5vw);font-weight:900;padding-top:1.2vh;animation:rise .7s both;border:.3vh solid;border-bottom:0}
+.pod.p1 .block{height:21vh;background:#FFF3D3;border-color:#F1D79E;color:#9a6a06}
+.pod.p2 .block{height:14vh;background:#EEF0F3;border-color:#D5D9E0;color:#5b6270}
+.pod.p3 .block{height:9vh;background:#FBEBDD;border-color:#EECBAB;color:#9a5a24}
 @keyframes rise{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
-.final-table{width:min(900px,94vw);background:#fff;color:var(--ink);border-radius:10px;border-collapse:collapse;overflow:hidden;margin-bottom:16px;font-size:min(2.8vh,2vw)}
-.final-table th,.final-table td{padding:.6vh 1.2vw;border-bottom:1px solid var(--line);text-align:left}
-.final-table th{background:#f0eef7}
- 
-/* 生徒画面 */
-.pl{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
-.pl-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;gap:14px}
-.pl-foot{display:flex;justify-content:space-between;align-items:center;background:#fff;color:var(--ink);padding:10px 16px;font-weight:800;font-size:18px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
-.pl-foot .who{display:flex;align-items:center;gap:6px}
+.final-table{width:min(900px,94vw);background:var(--card);border:1.5px solid var(--line);border-radius:14px;border-collapse:separate;border-spacing:0;overflow:hidden;margin-bottom:16px;font-size:min(2.6vh,1.9vw);font-weight:700}
+.final-table th,.final-table td{padding:.7vh 1.4vw;border-bottom:1px solid var(--line);text-align:left}
+.final-table tr:last-child td{border-bottom:0}
+.final-table th{color:var(--sub);font-size:.85em}
+
+/* ---------- 生徒画面 ---------- */
+.pl{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;transition:background .3s}
+.pl.ok{background:var(--ok-t)}
+.pl.ng{background:var(--ng-t)}
+.pl-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:14px}
+.pl-foot{display:flex;justify-content:space-between;align-items:center;background:var(--card);border-top:1.5px solid var(--line);padding:10px 16px;font-weight:900;font-size:18px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.pl-foot .who{display:flex;align-items:center;gap:8px}
 .pl-foot .who .ic{font-size:26px}
-.pl-foot .sc{background:#333;color:#fff;border-radius:6px;padding:.15em .6em}
-.join-form{background:#fff;color:var(--ink);border-radius:14px;padding:20px;width:min(380px,94vw);display:flex;flex-direction:column;gap:12px}
-.join-form input{font-size:24px;text-align:center;padding:.5em;border:2px solid var(--line);border-radius:8px;font-weight:800;width:100%}
-.join-form .btn{font-size:20px;padding:.7em}
-.join-form .lbl{font-weight:800;font-size:15px;text-align:left;color:var(--muted)}
+.pl-foot .sc{font-variant-numeric:tabular-nums;background:var(--bg);border-radius:999px;padding:.1em .8em}
+.join-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px;width:min(380px,94vw);display:flex;flex-direction:column;gap:12px;text-align:left}
+.join-card input{font-size:24px;text-align:center;padding:.45em;border:1.5px solid var(--line);border-radius:12px;font-weight:900;width:100%;background:var(--bg)}
+.join-card input:focus{outline:none;border-color:var(--brand)}
+.join-card .lbl{font-weight:700;font-size:14px;color:var(--sub)}
 .icon-row{display:flex;align-items:center;gap:10px}
-.icon-preview{font-size:52px;line-height:1;width:64px;text-align:center}
-.icon-row input{flex:1}
-.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:170px;overflow:auto;padding:4px;border:2px solid var(--line);border-radius:8px}
-.icon-grid button{font-size:26px;border:0;background:none;border-radius:8px;padding:3px 0;line-height:1.2}
-.icon-grid button.on{background:#e0d6ff;outline:2px solid var(--accent)}
-.join-err{color:#b0102a;font-weight:700;min-height:1.2em}
-.big-msg{font-size:clamp(26px,7vw,44px);font-weight:900;line-height:1.3;word-break:break-word}
-.mid-msg{font-size:20px;font-weight:700;opacity:.92;line-height:1.5;word-break:break-word}
-.me-icon{font-size:80px;line-height:1}
-.spinner{width:56px;height:56px;border-radius:50%;border:6px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.pl-q{flex:1;display:flex;flex-direction:column;padding:10px;gap:10px}
-.pl-qtext{background:#fff;color:var(--ink);border-radius:10px;padding:12px;font-weight:800;font-size:18px;text-align:center;white-space:pre-wrap;word-break:break-word}
-.pl-timebar{height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden}
-.pl-timebar i{display:block;height:100%;background:#fff;width:100%}
+.icon-preview{font-size:44px;line-height:1;width:62px;height:62px;flex:none;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.icon-row input{flex:1;min-width:0}
+.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:168px;overflow:auto;padding:4px;border:1.5px solid var(--line);border-radius:12px}
+.icon-grid button{font-size:25px;border:0;background:none;border-radius:8px;padding:3px 0;line-height:1.25}
+.icon-grid button.on{background:var(--b-t);box-shadow:inset 0 0 0 2px var(--brand)}
+.join-err{color:#c4252b;font-weight:700;min-height:1.2em;font-size:14px;text-align:center}
+.big-msg{font-size:clamp(26px,7vw,40px);font-weight:900;line-height:1.3;word-break:break-word}
+.mid-msg{font-size:18px;font-weight:700;color:var(--sub);line-height:1.6;word-break:break-word}
+.me-icon{font-size:76px;line-height:1;width:120px;height:120px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center}
+.badge-circle{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:66px;font-weight:900;color:#fff;background:var(--k);animation:pop .35s}
+.dots{display:flex;gap:8px}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--line2);animation:blink 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+.pl-q{flex:1;display:flex;flex-direction:column;padding:12px;gap:10px}
+.pl-qhead{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--sub)}
+.pl-qtext{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px;font-weight:900;font-size:18px;text-align:center;white-space:pre-wrap;word-break:break-word}
+.pl-timebar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.pl-timebar i{display:block;height:100%;background:var(--ink);width:100%}
 .pl-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:10px}
-.pl-btn{border:0;border-radius:12px;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;box-shadow:0 6px 0 rgba(0,0,0,.25);font-size:18px;font-weight:800;padding:10px;word-break:break-word;min-height:110px}
-.pl-btn .shape{width:30%;height:auto;aspect-ratio:1;max-width:110px}
-.pl-btn.with-text .shape{width:2em;height:2em}
-.pl-btn .tfglyph{font-size:96px;line-height:1;font-weight:900}
-.pl-btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.pl-btn{border:0;border-radius:18px;background:var(--k);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;font-size:17px;font-weight:900;padding:10px;word-break:break-word;min-height:110px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.15)}
+.pl-btn .big{font-size:64px;line-height:1}
+.pl-btn.with-text .big{font-size:40px}
+.pl-btn:active{transform:scale(.97)}
 .pl-btn.blank{visibility:hidden}
-.pl-textform{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;padding:0 6px}
-.pl-textform .lead{font-size:20px;font-weight:800;text-align:center}
-.pl-textform input{font-size:26px;padding:.6em;border-radius:10px;border:0;text-align:center;font-weight:800;width:100%}
-.pl-textform .btn{font-size:24px;padding:.7em}
-.pl.ok{background:linear-gradient(160deg,#2fa212,#1d6b08)}
-.pl.ng{background:linear-gradient(160deg,#e8334f,#9e0c22)}
-.res-icon{font-size:90px;line-height:1}
-.pts{background:rgba(0,0,0,.25);border-radius:8px;padding:.3em .9em;font-size:26px;font-weight:900}
-.your-ans{background:rgba(0,0,0,.2);border-radius:8px;padding:.3em .8em;font-size:18px;font-weight:700}
+.pl-textform{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center}
+.pl-textform .lead{font-size:20px;font-weight:900;text-align:center}
+.pl-textform input{font-size:26px;padding:.55em;border-radius:14px;border:1.5px solid var(--line);text-align:center;font-weight:900;width:100%;background:var(--card)}
+.pl-textform input:focus{outline:none;border-color:var(--brand)}
+.pl-textform .btn{font-size:22px;padding:.65em}
+.pts{font-size:30px;font-weight:900;color:var(--ok)}
+.chip{display:inline-flex;align-items:center;gap:.4em;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:.25em .9em;font-weight:900;font-size:17px;max-width:90%;word-break:break-word}
+.chip .key{font-size:15px}
 </style>
 </head>
 <body>
-<div id="app" class="stage"></div>
+<div id="app"></div>
 <div id="toast" class="toast"></div>
- 
+
 <script>
 'use strict';
 /* ==========================================================
-   はやおしクイズ — 単一HTMLの早押しクイズ（先生画面＋生徒画面）
+   テアゲ — 単一HTMLの早押しクイズ（先生画面＋生徒画面）
    通信: PeerJS（WebRTC）。先生のブラウザが親機になり、PINで生徒とつながる
    問題形式: 選択式（2〜4択）／○×／記述式（正解なしならアンケート）
    ========================================================== */
- 
-const PEER_PREFIX = 'hayaoshi-quiz-v1-';   // 公開サーバー上で他アプリとIDが衝突しないための接頭辞
-const LS_SETS = 'hayaoshi.sets.v1';
+
+const APP_NAME = 'テアゲ';
+const PEER_PREFIX = 'teage-quiz-v1-';      // 公開サーバー上で他アプリとIDが衝突しないための接頭辞
+const LS_SETS = 'hayaoshi.sets.v1';        // 以前の版で作ったクイズをそのまま引き継ぐ
 const LS_NAME = 'hayaoshi.name';
 const LS_ICON = 'hayaoshi.icon';
 const SS_CID = 'hayaoshi.cid';
 const READY_MS = 3500;                     // 問題文を先に見せる時間
 const TEXT_MAX = 40;                       // 記述式の最大文字数
 const TIME_OPTIONS = [5, 10, 20, 30, 60, 90, 120];
-const COLORS = ['var(--c0)', 'var(--c1)', 'var(--c2)', 'var(--c3)'];
-const SHAPES = [
-  '<svg viewBox="0 0 100 100"><polygon points="50,10 93,88 7,88"/></svg>',
-  '<svg viewBox="0 0 100 100"><polygon points="50,5 95,50 50,95 5,50"/></svg>',
-  '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="43"/></svg>',
-  '<svg viewBox="0 0 100 100"><rect x="11" y="11" width="78" height="78"/></svg>'
-];
-const TF = [{ glyph: '○', color: 'var(--c1)' }, { glyph: '×', color: 'var(--c0)' }];
+const CH = ['a', 'b', 'c', 'd'].map((x, j) => ({ L: 'ABCD'[j], style: `--k:var(--${x});--kt:var(--${x}-t);--kb:var(--${x}-b)` }));
+const TF = [{ glyph: '○', style: CH[1].style }, { glyph: '×', style: CH[0].style }];
 const TYPE_LABEL = { choice: '選択式', tf: '○×', text: '記述式' };
 const ICONS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
   '🐧', '🐤', '🦉', '🐴', '🦄', '🐝', '🐞', '🦋', '🐢', '🐙', '🦀', '🐬', '🐳', '🦈', '🦒', '🐘',
   '🦔', '🌸', '🌻', '🍀', '🍎', '🍓', '🍙', '🍣', '🍩', '🍦', '⚽', '⚾', '🏀', '🎸', '🚀', '🚃',
   '⭐', '🌈', '⛄', '🔥', '💎', '👑', '🤖', '👻'];
- 
+const LOGO_SVG = `<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#3E63DD"/><rect x="19.5" y="27" width="26" height="24" rx="10" fill="#fff"/><g stroke="#fff" stroke-width="5.6" stroke-linecap="round"><line x1="23" y1="31" x2="23" y2="16.5"/><line x1="29.8" y1="30" x2="29.8" y2="11.5"/><line x1="36.6" y1="30" x2="36.6" y2="12.5"/><line x1="43" y1="32" x2="43" y2="18.5"/><line x1="21.5" y1="43" x2="14" y2="34.5"/></g></svg>`;
+const logo = () => `<span class="logo">${LOGO_SVG}${APP_NAME}</span>`;
+
 const app = document.getElementById('app');
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const shape = i => `<span class="shape">${SHAPES[i]}</span>`;
+const key = j => `<span class="key" style="${CH[j].style}">${CH[j].L}</span>`;
+const dots = '<div class="dots"><i></i><i></i><i></i></div>';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const clone = o => JSON.parse(JSON.stringify(o));
- 
+
 function toast(msg, ms = 2200) {
   const t = $('#toast');
   t.textContent = msg;
@@ -279,8 +313,7 @@ function toast(msg, ms = 2200) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => t.classList.remove('show'), ms);
 }
-function setStage(purple) { app.className = purple ? 'stage' : ''; document.body.style.background = purple ? 'var(--bg2)' : '#f4f3f9'; }
- 
+
 /* 枠に収まるまで文字を小さくする（プロジェクター表示用） */
 function fitBox(box, maxPx, minPx) {
   if (!box) return minPx;
@@ -295,7 +328,7 @@ function fitBox(box, maxPx, minPx) {
   if (over()) inner.classList.add('brk');   // 最小でも入らない長い単語は途中で折り返す
   return s;
 }
- 
+
 /* ---------- 保存（ブラウザのlocalStorage） ---------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -328,9 +361,9 @@ let sets = store.get(LS_SETS, null);
 if (!Array.isArray(sets)) sets = [sampleSet()];
 sets = sets.map(s => ({ id: s.id || uid(), title: String(s.title ?? ''), questions: (s.questions || []).map(normQuestion) }));
 store.set(LS_SETS, sets);
-function saveSets() { if (!store.set(LS_SETS, sets)) toast('保存できませんでした（ブラウザの設定を確認してください）'); }
+function saveSets() { if (!store.set(LS_SETS, sets)) toast('保存できませんでした。ブラウザの設定を確認してください'); }
 function newQuestion(type = 'choice') { return normQuestion({ type, correct: 0, time: type === 'text' ? 30 : 20 }); }
- 
+
 /* 記述式の答え合わせ用：全角半角・大文字小文字・空白・末尾の句読点の違いを無視 */
 function normAnswer(s) {
   return String(s ?? '').normalize('NFKC').toLowerCase().replace(/\s+/g, '').replace(/[。．.！!？?、,]+$/, '');
@@ -340,9 +373,9 @@ function isSurvey(q) { return q.type === 'text' && !q.answers.length; }
 function correctLabel(q) {
   if (q.type === 'tf') return TF[q.correct].glyph;
   if (q.type === 'text') return q.answers.join(' ／ ');
-  return q.choices[q.correct];
+  return `${CH[q.correct].L}　${q.choices[q.correct]}`;
 }
- 
+
 /* 問題のチェック。問題なければ空文字を返す */
 function questionProblem(q) {
   if (!q.q.trim()) return '問題文が空です';
@@ -353,7 +386,7 @@ function questionProblem(q) {
   }
   return '';
 }
- 
+
 /* ---------- CSV（タブ区切りも可） ---------- */
 function parseDelimited(text) {
   const delim = /\t/.test(text.split(/\r?\n/).find(l => l.trim()) || '') ? '\t' : ',';
@@ -404,7 +437,7 @@ function importCsv(text) {
     if (type === 'choice') {
       const c = parseChoiceAnswer(cells[5], choices);
       q = normQuestion({ type, q: cells[0], choices, correct: c < 0 ? 0 : c, time });
-      prob = c < 0 ? '正解の指定（1〜4）が読み取れません' : questionProblem(q);
+      prob = c < 0 ? '正解の指定（1〜4 か A〜D）が読み取れません' : questionProblem(q);
     } else if (type === 'tf') {
       const c = parseTf(cells[5]);
       q = normQuestion({ type, q: cells[0], correct: c < 0 ? 0 : c, time });
@@ -428,7 +461,7 @@ function downloadText(filename, text) {
 }
 function stamp() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 function safeFile(s) { return String(s).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) || 'quiz'; }
- 
+
 /* ---------- 効果音（Web Audio） ---------- */
 let actx = null;
 function beep(freq, dur = .12, type = 'sine', vol = .18, delay = 0) {
@@ -448,51 +481,50 @@ const sfx = {
   end() { beep(523, .15, 'triangle'); beep(659, .15, 'triangle', .18, .12); beep(784, .3, 'triangle', .18, .24); },
   fanfare() { [523, 659, 784, 1047].forEach((f, i) => beep(f, .25, 'triangle', .18, i * .15)); }
 };
- 
+
 /* ==========================================================
    入口画面
    ========================================================== */
 function showLanding() {
-  setStage(true);
   app.innerHTML = `
-  <div class="center-screen">
-    <h1 class="logo">はやおしクイズ</h1>
-    <p class="sub">ブラウザだけで遊べる早押しクイズ</p>
-    <div class="landing-btns">
-      <button class="big-btn host" id="goHost">先生<small>クイズを作る・出題する</small></button>
-      <button class="big-btn join" id="goJoin">生徒<small>PINで参加する</small></button>
+  <div class="center hero">
+    ${logo()}
+    <p>みんなで手を挙げる、教室の早押しクイズ</p>
+    <div class="entry">
+      <button id="goHost"><span class="ic" style="${CH[1].style}">先</span><span><b>先生</b><small>クイズを作る・出題する</small></span></button>
+      <button id="goJoin"><span class="ic" style="${CH[3].style}">生</span><span><b>生徒</b><small>PINで参加する</small></span></button>
     </div>
   </div>`;
   $('#goHost').onclick = showHostHome;
   $('#goJoin').onclick = () => showJoin('');
 }
- 
+
 /* ==========================================================
    先生：クイズ一覧
    ========================================================== */
 function showHostHome() {
-  setStage(false);
   const list = sets.map(s => {
-    const kinds = ['choice', 'tf', 'text'].map(t => [t, s.questions.filter(q => q.type === t).length]).filter(x => x[1]).map(([t, n]) => `${TYPE_LABEL[t]}${n}`).join('・');
+    const kinds = ['choice', 'tf', 'text'].map(t => [t, s.questions.filter(q => q.type === t).length]).filter(x => x[1]).map(([t, n]) => `${TYPE_LABEL[t]} ${n}`).join('・');
     return `
     <div class="card set-row" data-id="${s.id}">
       <div class="info"><div class="title">${esc(s.title || '（無題）')}</div>
-        <div class="meta">${s.questions.length}問${kinds ? `（${kinds}）` : ''}</div></div>
-      <button class="btn go" data-act="play">▶ 出題する</button>
+        <div class="meta">${s.questions.length}問${kinds ? `　${kinds}` : ''}</div></div>
+      <button class="btn primary" data-act="play">出題する</button>
       <button class="btn" data-act="edit">編集</button>
-      <button class="btn small" data-act="dup">複製</button>
-      <button class="btn small danger" data-act="del">削除</button>
+      <button class="btn quiet small" data-act="dup">複製</button>
+      <button class="btn quiet small danger" data-act="del">削除</button>
     </div>`;
   }).join('');
   app.innerHTML = `
   <div class="page">
     <div class="topbar">
-      <button class="btn small" id="back">← 戻る</button>
-      <h2>クイズ一覧</h2>
+      <button class="btn quiet small" id="back">← 戻る</button>
+      ${logo()}
+      <h2></h2>
       <button class="btn primary" id="newSet">＋ 新しいクイズ</button>
     </div>
-    ${list || '<div class="empty">クイズがありません。「新しいクイズ」から作りましょう。</div>'}
-    <p class="help">クイズはこのブラウザの中に保存されます（別のPCやブラウザでは見えません）。バックアップや共有には、編集画面の「CSVで書き出し」を使ってください。</p>
+    ${list || '<div class="empty">まだクイズがありません。「新しいクイズ」から作りましょう。</div>'}
+    <p class="help">クイズはこのブラウザの中に保存されます（別のPCやブラウザからは見えません）。バックアップや共有には、編集画面の「CSVで書き出し」を使ってください。</p>
   </div>`;
   $('#back').onclick = showLanding;
   $('#newSet').onclick = () => {
@@ -508,33 +540,32 @@ function showHostHome() {
     if (act === 'del' && confirm(`「${s.title}」を削除しますか？`)) { sets = sets.filter(x => x.id !== id); saveSets(); showHostHome(); }
   }));
 }
- 
+
 /* ==========================================================
    先生：クイズ編集
    ========================================================== */
 function showEditor(id) {
   const s = sets.find(x => x.id === id);
   if (!s) return showHostHome();
-  setStage(false);
   let saveTimer = null;
   const autosave = () => {
     $('#saveState').textContent = '編集中…';
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { saveSets(); const el = $('#saveState'); if (el) el.textContent = '保存しました'; }, 400);
   };
- 
+
   const bodyHtml = (q, i) => {
     if (q.type === 'tf') return `
-      <div class="tf-edit">${TF.map((t, j) => `<button class="tfb ${q.correct === j ? 'on' : ''}" data-act="tf" data-v="${j}" style="--c:${t.color}">${t.glyph} が正解</button>`).join('')}</div>`;
+      <div class="tf-edit">${TF.map((t, j) => `<button class="tfb ${q.correct === j ? 'on' : ''}" data-act="tf" data-v="${j}" style="${t.style}"><span class="g">${t.glyph}</span>が正解</button>`).join('')}</div>`;
     if (q.type === 'text') return `
       <div class="text-edit"><input type="text" data-f="answers" value="${esc(q.answers.join(' / '))}" placeholder="正解（複数あるときは / で区切る　例：cat / a cat）"></div>
       <p class="help" style="margin:4px 0 0">全角・半角、大文字・小文字、空白の違いは同じ答えとみなします。出題中に先生がタップして正解を追加することもできます。<b>空欄にするとアンケート</b>（得点なし・みんなの答えを表示するだけ）になります。</p>`;
     return `
       <div class="choices-edit">
         ${[0, 1, 2, 3].map(j => `
-        <div class="ch-edit ${q.correct === j ? 'is-correct' : ''}" style="--c:${COLORS[j]}">
-          ${shape(j)}
-          <input type="text" data-f="c${j}" value="${esc(q.choices[j])}" placeholder="選択肢${j + 1}${j >= 2 ? '（空欄可）' : ''}">
+        <div class="ch-edit ${q.correct === j ? 'is-correct' : ''}" style="${CH[j].style}">
+          ${key(j)}
+          <input type="text" data-f="c${j}" value="${esc(q.choices[j])}" placeholder="選択肢 ${CH[j].L}${j >= 2 ? '（空欄可）' : ''}">
           <label class="cor"><input type="radio" name="cor${i}" data-f="correct" value="${j}" ${q.correct === j ? 'checked' : ''}>正解</label>
         </div>`).join('')}
       </div>`;
@@ -542,41 +573,41 @@ function showEditor(id) {
   const qHtml = (q, i) => `
     <div class="card qcard" data-i="${i}">
       <div class="qhead">
-        <b>第${i + 1}問</b>
+        <b>Q${i + 1}</b>
         <select data-f="type">${['choice', 'tf', 'text'].map(t => `<option value="${t}" ${q.type === t ? 'selected' : ''}>${{ choice: '選択式（2〜4択）', tf: '○×', text: '記述式' }[t]}</option>`).join('')}</select>
-        <label>制限時間 <select data-f="time">${TIME_OPTIONS.concat(TIME_OPTIONS.includes(q.time) ? [] : [q.time]).sort((a, b) => a - b).map(t => `<option value="${t}" ${t === q.time ? 'selected' : ''}>${t}秒</option>`).join('')}</select></label>
+        <select data-f="time" aria-label="制限時間">${TIME_OPTIONS.concat(TIME_OPTIONS.includes(q.time) ? [] : [q.time]).sort((a, b) => a - b).map(t => `<option value="${t}" ${t === q.time ? 'selected' : ''}>${t}秒</option>`).join('')}</select>
         <span class="sp"></span>
-        <button class="btn small" data-act="up" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="btn small" data-act="down" ${i === s.questions.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="btn small" data-act="copy">複製</button>
-        <button class="btn small danger" data-act="del">削除</button>
+        <button class="btn quiet small" data-act="up" ${i === 0 ? 'disabled' : ''} aria-label="上へ">↑</button>
+        <button class="btn quiet small" data-act="down" ${i === s.questions.length - 1 ? 'disabled' : ''} aria-label="下へ">↓</button>
+        <button class="btn quiet small" data-act="copy">複製</button>
+        <button class="btn quiet small danger" data-act="del">削除</button>
       </div>
-      <textarea data-f="q" placeholder="${q.type === 'tf' ? '○か×で答える問題文を入力' : '問題文を入力'}">${esc(q.q)}</textarea>
+      <textarea data-f="q" placeholder="${q.type === 'tf' ? '○か×で答える文を入力' : '問題文を入力'}">${esc(q.q)}</textarea>
       ${bodyHtml(q, i)}
       <div class="qwarn">${esc(questionProblem(q))}</div>
     </div>`;
- 
+
   function render() {
     app.innerHTML = `
     <div class="page">
       <div class="topbar">
-        <button class="btn small" id="back">← 一覧へ</button>
+        <button class="btn quiet small" id="back">← 一覧へ</button>
         <h2>クイズを編集</h2>
         <span class="savestate" id="saveState">保存済み</span>
-        <button class="btn go" id="play">▶ 出題する</button>
+        <button class="btn primary" id="play">出題する</button>
       </div>
       <div class="card"><input class="title-input" id="title" value="${esc(s.title)}" placeholder="クイズのタイトル"></div>
       <div id="qs">${s.questions.map(qHtml).join('')}</div>
       <div class="row-btns">
-        <button class="btn primary" data-add="choice">＋ 選択式</button>
-        <button class="btn primary" data-add="tf">＋ ○×</button>
-        <button class="btn primary" data-add="text">＋ 記述式</button>
+        <button class="btn" data-add="choice">＋ 選択式</button>
+        <button class="btn" data-add="tf">＋ ○×</button>
+        <button class="btn" data-add="text">＋ 記述式</button>
       </div>
-      <div class="card csv-box" style="margin-top:18px">
-        <b>CSV・表から取り込み</b>
-        <p class="help">1行に1問。<code>問題,選択肢1,選択肢2,選択肢3,選択肢4,正解,制限時間(秒),形式</code><br>
-        Excelやスプレッドシートの表をそのままコピーして貼り付けてもOK（タブ区切り）。制限時間を省略すると20秒。「形式」は省略可（自動で判定）。<br>
-        ・選択式：正解は番号(1〜4)。選択肢3・4は空欄可　例：<code>dog の意味は？,ねこ,いぬ,とり,うま,2,20</code><br>
+      <div class="card csv-box" style="margin-top:22px">
+        <b>表から取り込む（CSV・Excel貼り付け）</b>
+        <p class="help">1行に1問。<code>問題,選択肢A,選択肢B,選択肢C,選択肢D,正解,制限時間(秒),形式</code><br>
+        Excelやスプレッドシートの表をそのままコピーして貼り付けてもOK。制限時間を省略すると20秒。「形式」は省略可（自動で判定）。<br>
+        ・選択式：正解は 1〜4 か A〜D。選択肢C・Dは空欄可　例：<code>dog の意味は？,ねこ,いぬ,とり,うま,B,20</code><br>
         ・○×：選択肢を空欄にして正解に ○ か ×　例：<code>犬は英語でdogである。,,,,,○,10</code><br>
         ・記述式：選択肢を空欄にして正解を書く（複数は / で区切る）　例：<code>「ねこ」を英語で？,,,,,cat / a cat,30</code><br>
         ・アンケート：記述式で正解を空欄にして形式に「記述」　例：<code>好きな教科は？,,,,,,30,記述</code></p>
@@ -584,7 +615,7 @@ function showEditor(id) {
         <div class="row-btns">
           <button class="btn primary" id="impAdd">末尾に追加</button>
           <button class="btn" id="impRep">全部置き換え</button>
-          <button class="btn" id="exp">CSVで書き出し</button>
+          <button class="btn quiet" id="exp">CSVで書き出し</button>
         </div>
         <div class="qwarn" id="impErr"></div>
       </div>
@@ -611,7 +642,7 @@ function showEditor(id) {
       if (act === 'up' && i > 0) [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]];
       if (act === 'down' && i < qs.length - 1) [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]];
       if (act === 'copy') qs.splice(i + 1, 0, clone(qs[i]));
-      if (act === 'del') { if (!confirm(`第${i + 1}問を削除しますか？`)) return; qs.splice(i, 1); }
+      if (act === 'del') { if (!confirm(`Q${i + 1} を削除しますか？`)) return; qs.splice(i, 1); }
       saveSets(); render();
     });
     const doImport = replace => {
@@ -626,9 +657,9 @@ function showEditor(id) {
     $('#impAdd').onclick = () => doImport(false);
     $('#impRep').onclick = () => doImport(true);
     $('#exp').onclick = () => {
-      const lines = ['問題,選択肢1,選択肢2,選択肢3,選択肢4,正解,制限時間,形式'];
+      const lines = ['問題,選択肢A,選択肢B,選択肢C,選択肢D,正解,制限時間,形式'];
       s.questions.forEach(q => {
-        const row = q.type === 'choice' ? [q.q, ...q.choices, q.correct + 1, q.time, '選択']
+        const row = q.type === 'choice' ? [q.q, ...q.choices, CH[q.correct].L, q.time, '選択']
           : q.type === 'tf' ? [q.q, '', '', '', '', TF[q.correct].glyph, q.time, '○×']
             : [q.q, '', '', '', '', q.answers.join(' / '), q.time, '記述'];
         lines.push(row.map(csvCell).join(','));
@@ -657,18 +688,18 @@ function showEditor(id) {
   }
   render();
 }
- 
+
 /* ==========================================================
    先生：ゲーム進行（親機）
    ========================================================== */
 let H = null; // 先生側の状態
- 
+
 function startHosting(setId) {
   const s = sets.find(x => x.id === setId);
   if (!s) return;
   if (!s.questions.length) { toast('問題がありません'); return; }
   const bad = s.questions.findIndex(q => questionProblem(q));
-  if (bad >= 0) { toast(`第${bad + 1}問: ${questionProblem(s.questions[bad])}`, 3500); showEditor(setId); return; }
+  if (bad >= 0) { toast(`Q${bad + 1}: ${questionProblem(s.questions[bad])}`, 3500); showEditor(setId); return; }
   H = {
     set: clone(s), opts: { shuffleQ: false, showOnDevice: false, sound: true },
     players: new Map(), kicked: new Set(), phase: 'lobby', order: [], idx: -1,
@@ -678,9 +709,9 @@ function startHosting(setId) {
   openHostPeer(0);
   renderHost();
 }
- 
+
 function genPin() { return String(Math.floor(100000 + Math.random() * 900000)); }
- 
+
 function openHostPeer(tries) {
   if (typeof Peer === 'undefined') { H.status = 'nolib'; updateStatus(); return; }
   const pin = genPin();
@@ -703,13 +734,13 @@ function openHostPeer(tries) {
     } else console.warn('peer error', err);
   });
 }
- 
+
 function statusHtml() {
   const map = {
     connecting: ['接続準備中…', ''],
-    ready: ['● 参加受付中', ''],
+    ready: ['参加受付中', 'ok'],
     reconnecting: ['再接続中…', ''],
-    nolib: ['通信ライブラリを読み込めませんでした（インターネット接続を確認）', 'err'],
+    nolib: ['通信ライブラリを読み込めませんでした。インターネット接続を確認してください', 'err'],
     error: [`接続エラー（${esc(H.errType)}）`, 'err']
   };
   const [t, c] = map[H.status] || ['', ''];
@@ -725,29 +756,29 @@ function updateStatus() {
     openHostPeer(0); renderHost();
   };
 }
- 
+
 function send(conn, msg) { try { if (conn && conn.open) conn.send(msg); } catch (e) { } }
 function onlinePlayers() { return [...H.players.values()].filter(p => p.online); }
- 
+
 function setupHostConn(conn) {
   conn.on('data', d => onHostData(conn, d));
   const gone = () => {
     if (!H) return;
     for (const p of H.players.values()) if (p.conn === conn) { p.online = false; p.conn = null; }
     refreshPlayersUi();
-    if (H.phase === 'question') checkAllAnswered();
+    if (H.phase === 'question') { updateDone(); checkAllAnswered(); }
   };
   conn.on('close', gone);
   conn.on('error', gone);
 }
- 
+
 function cleanName(n) { return String(n ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 12); }
 function uniqueName(name) {
   const used = new Set([...H.players.values()].map(p => p.name));
   if (!used.has(name)) return name;
   for (let k = 2; ; k++) if (!used.has(`${name}(${k})`)) return `${name}(${k})`;
 }
- 
+
 function onHostData(conn, d) {
   if (!H || !d || typeof d !== 'object') return;
   if (d.t === 'join') {
@@ -771,32 +802,40 @@ function onHostData(conn, d) {
     send(conn, { t: 'welcome', name: p.name, icon: p.icon, title: H.set.title });
     syncPlayer(p);
     refreshPlayersUi();
+    if (H.phase === 'question') updateDone();
   } else if (d.t === 'a') {
     const p = H.players.get(conn.cid);
     if (p && p.conn === conn) handleAnswer(p, d);
   }
 }
- 
+
 /* 途中参加・再接続した生徒に、今の状態を送る */
 function syncPlayer(p) {
   const c = p.conn;
   switch (H.phase) {
     case 'lobby': send(c, { t: 'lobby' }); break;
     case 'ready': send(c, { t: 'ready', i: H.idx, n: H.order.length, type: curQ().type }); break;
-    case 'question':
-      if (H.answers.has(p.cid)) send(c, { t: 'answered' });
+    case 'question': {
+      const a = H.answers.get(p.cid);
+      if (a) send(c, { t: 'answered', pick: pickLabel(curQ(), a) });
       else send(c, qPayload(Math.max(0, curQ().time * 1000 - (performance.now() - H.qStart))));
       break;
+    }
     case 'reveal': case 'board': send(c, resultPayload(p)); break;
     case 'final': send(c, endPayload(p)); break;
   }
 }
- 
+
 function curQ() { return H.set.questions[H.order[H.idx]]; }
 function availIdx(q) {
   if (q.type === 'tf') return [0, 1];
   if (q.type === 'text') return [];
   return [0, 1, 2, 3].filter(j => q.choices[j] && q.choices[j].trim());
+}
+function pickLabel(q, a) {
+  if (!a) return null;
+  if (q.type === 'text') return { s: a.s };
+  return { c: a.c };
 }
 function qPayload(remainMs) {
   const q = curQ();
@@ -816,16 +855,16 @@ function resultPayload(p) {
   const q = curQ(), r = p.qres[H.idx] || {};
   return {
     t: 'r', i: H.idx, type: q.type, survey: H.survey, correct: p.lastCorrect, answered: p.lastAnswered, pts: p.lastPts,
-    score: p.score, rank: p.rank, total: H.players.size, ans: H.survey ? '' : correctLabel(q), mine: r.a && r.a.s ? r.a.s : ''
+    score: p.score, rank: p.rank, total: H.players.size, ans: H.survey ? '' : correctLabel(q), pick: pickLabel(q, r.a)
   };
 }
 function gradedCount() { return H.order.filter(k => !isSurvey(H.set.questions[k])).length; }
 function endPayload(p) { return { t: 'end', rank: p.rank, score: p.score, total: H.players.size, correctCount: p.correctCount, n: gradedCount() }; }
 function broadcast(msgFn) { for (const p of H.players.values()) if (p.online) send(p.conn, typeof msgFn === 'function' ? msgFn(p) : msgFn); }
- 
+
 function clearTimers() { clearTimeout(H.timer); clearInterval(H.tickTimer); H.timer = null; H.tickTimer = null; }
 function resetScores() { for (const p of H.players.values()) Object.assign(p, { score: 0, correctCount: 0, qres: [], lastPts: 0, lastCorrect: false, lastAnswered: false, rank: 1 }); }
- 
+
 function startGame() {
   if (!H.players.size) return;
   H.order = H.set.questions.map((_, i) => i);
@@ -834,7 +873,7 @@ function startGame() {
   H.idx = -1;
   nextQuestion();
 }
- 
+
 function nextQuestion() {
   clearTimers();
   H.idx++;
@@ -846,7 +885,7 @@ function nextQuestion() {
   renderHost();
   H.timer = setTimeout(beginAnswering, READY_MS);
 }
- 
+
 function beginAnswering() {
   const q = curQ();
   H.phase = 'question';
@@ -857,13 +896,20 @@ function beginAnswering() {
   H.tickTimer = setInterval(() => {
     const remain = q.time * 1000 - (performance.now() - H.qStart);
     const sec = Math.max(0, Math.ceil(remain / 1000));
-    const t = $('#timer');
-    if (t) { t.textContent = sec; t.classList.toggle('hurry', sec <= 5); }
-    if (sec !== lastSec) { lastSec = sec; if (sec <= 5 && sec > 0) sfx.tick(); }
+    const hurry = sec <= 5;
+    const bar = $('#tbar'), secs = $('#secs');
+    if (bar) { bar.firstElementChild.style.width = Math.max(0, remain / (q.time * 1000) * 100) + '%'; bar.classList.toggle('hurry', hurry); }
+    if (secs) { secs.textContent = sec; secs.classList.toggle('hurry', hurry); }
+    if (sec !== lastSec) { lastSec = sec; if (hurry && sec > 0) sfx.tick(); }
     if (remain <= 0) endQuestion();
   }, 100);
 }
- 
+
+function updateDone() {
+  const el = $('#done'); if (!el) return;
+  el.innerHTML = `<b>${H.answers.size}</b> / ${onlinePlayers().length} 人が回答`;
+}
+
 function handleAnswer(p, d) {
   if (H.phase !== 'question' || d.i !== H.idx || H.answers.has(p.cid)) return;
   const q = curQ();
@@ -879,15 +925,15 @@ function handleAnswer(p, d) {
   }
   a.ms = performance.now() - H.qStart;
   H.answers.set(p.cid, a);
-  send(p.conn, { t: 'answered' });
-  const el = $('#answeredN'); if (el) el.textContent = H.answers.size;
+  send(p.conn, { t: 'answered', pick: pickLabel(q, a) });
+  updateDone();
   checkAllAnswered();
 }
 function checkAllAnswered() {
   const on = onlinePlayers();
   if (on.length && on.every(p => H.answers.has(p.cid))) setTimeout(endQuestion, 400);
 }
- 
+
 function judge(q, a) {
   if (!a) return false;
   if (q.type === 'text') { const n = normAnswer(a.s); return q.answers.some(x => normAnswer(x) === n); }
@@ -908,7 +954,7 @@ function scoreCurrent() {
   }
   ranking();
 }
- 
+
 function endQuestion() {
   if (!H || H.phase !== 'question') return;
   clearTimers();
@@ -918,7 +964,7 @@ function endQuestion() {
   sfx.end();
   renderHost();
 }
- 
+
 /* 記述式：答えのグループをタップして正解/不正解を切り替える */
 function toggleTextGroup(norm, raw) {
   const q = curQ();
@@ -928,7 +974,7 @@ function toggleTextGroup(norm, raw) {
   broadcast(p => resultPayload(p));
   renderHost();
 }
- 
+
 function showBoard() { H.phase = 'board'; renderHost(); }
 function showFinal() {
   clearTimers();
@@ -965,11 +1011,11 @@ function downloadResults() {
     const mark = isSurvey(q) ? '' : (r.ok ? '○' : '×');
     if (q.type === 'text') return `${mark}${mark ? ' ' : ''}${r.a.s}`;
     if (q.type === 'tf') return `${mark}（${TF[r.a.c].glyph}）`;
-    return `${mark}（${r.a.c + 1}）`;
+    return `${mark}（${CH[r.a.c].L}）`;
   })].map(csvCell).join(',')));
   downloadText(`${stamp()}${safeFile(H.set.title)}_結果.csv`, lines.join('\r\n'));
 }
- 
+
 /* ---------- 先生画面の描画 ---------- */
 function joinUrl() { return location.href.split('#')[0].split('?')[0] + '?pin=' + H.pin; }
 function qrHtml(url) {
@@ -977,74 +1023,81 @@ function qrHtml(url) {
   try { const qr = qrcode(0, 'M'); qr.addData(url); qr.make(); return qr.createImgTag(5, 8, '参加用QRコード'); } catch (e) { return ''; }
 }
 function vmin(wRatio, hRatio) { return Math.min(innerWidth * wRatio, innerHeight * hRatio); }
- 
-/* 選択肢パネル（選択式・○×） */
+
+/* 選択肢パネル（選択式・○×）。reveal のときは人数と割合も出す */
 function ansGridHtml(q, mode) {
+  const reveal = mode === 'reveal';
+  const counts = [0, 0, 0, 0];
+  if (reveal) for (const a of H.answers.values()) counts[a.c]++;
+  const total = Math.max(1, H.answers.size);
+  const extra = j => reveal ? `<span class="cnt">${counts[j]}人</span><span class="prop" style="width:${counts[j] / total * 100}%"></span>` : '';
+  const cls = j => reveal ? (j === q.correct ? 'correct' : 'dim') : '';
   if (q.type === 'tf') {
     return `<div class="ans-grid two">${TF.map((t, j) => `
-      <div class="ans tfbox ${mode === 'reveal' && j !== q.correct ? 'dim' : ''}" style="--c:${t.color}">
-        <span class="tfglyph">${t.glyph}</span>${mode === 'reveal' && j === q.correct ? '<span class="mark">✔</span>' : ''}</div>`).join('')}</div>`;
+      <div class="ans tfbox ${cls(j)}" style="${t.style}"><span class="tfg">${t.glyph}</span>${extra(j)}</div>`).join('')}</div>`;
   }
   return `<div class="ans-grid">${[0, 1, 2, 3].map(j => {
     const blank = !q.choices[j] || !q.choices[j].trim();
-    const dim = mode === 'reveal' && j !== q.correct;
-    return `<div class="ans ${blank ? 'blank' : ''} ${dim ? 'dim' : ''}" style="--c:${COLORS[j]}">${shape(j)}<span class="txt fit">${esc(q.choices[j])}</span>${mode === 'reveal' && j === q.correct ? '<span class="mark">✔</span>' : ''}</div>`;
+    return `<div class="ans ${blank ? 'blank' : ''} ${cls(j)}" style="${CH[j].style}">${key(j)}<span class="txt fit">${esc(q.choices[j])}</span>${extra(j)}</div>`;
   }).join('')}</div>`;
 }
- 
+
 /* 文字サイズを画面に合わせる */
 function fitHost() {
   if (!H || H.phase === 'lobby') return;
-  $$('.q-text').forEach(el => fitBox(el, vmin(.065, .095), 18));
+  $$('.q-text').forEach(el => fitBox(el, vmin(.06, .09), 18));
   const boxes = $$('.ans:not(.blank):not(.tfbox)');
   if (boxes.length) {
-    const size = Math.min(...boxes.map(b => fitBox(b, vmin(.06, .085), 16)));
+    const size = Math.min(...boxes.map(b => fitBox(b, vmin(.05, .075), 16)));
     boxes.forEach(b => { b.style.fontSize = size + 'px'; fitBox(b, size, 16); });
   }
 }
 window.addEventListener('resize', () => { clearTimeout(fitHost._t); fitHost._t = setTimeout(fitHost, 120); });
- 
+
 function renderHost() {
   if (!H) return;
-  setStage(true);
   const ph = H.phase;
   if (ph === 'lobby') return renderLobby();
   const q = curQ();
-  const head = label => `
-    <div class="game-head">
-      <span>${label}</span>
+  const typePill = `<span class="pill">${TYPE_LABEL[q.type]}${H.survey ? '・アンケート' : ''}</span>`;
+  const head = (label, withType = true) => `
+    <div class="g-head">
+      ${logo()}
+      <span class="pill">${label}</span>${withType ? typePill : ''}
       <span class="grow"></span>
       <span id="peerStatus">${statusHtml()}</span>
-      <button class="btn small ghost" id="fs">⛶ 全画面</button>
-      <button class="btn small ghost" id="abort">中止</button>
+      <button class="btn quiet small" id="fs">全画面</button>
+      <button class="btn quiet small" id="abort">中止</button>
     </div>`;
-  const pos = `${H.idx + 1} / ${H.order.length}　${TYPE_LABEL[q.type]}${H.survey ? '（アンケート）' : ''}`;
- 
+  const pos = `Q${H.idx + 1} / ${H.order.length}`;
+  const last = H.idx === H.order.length - 1;
+
   if (ph === 'ready') {
-    app.innerHTML = `<div class="game">${head(pos)}
-      <div class="ready-screen">
-        <div class="qn">第${H.idx + 1}問　${TYPE_LABEL[q.type]}${H.survey ? '（アンケート）' : ''}</div>
+    app.innerHTML = `<div class="game">${head(pos, false)}
+      <div class="ready">
+        <span class="pill">Q${H.idx + 1}　${TYPE_LABEL[q.type]}${H.survey ? '・アンケート' : ''}</span>
         <div class="q-text"><span class="fit">${esc(q.q)}</span></div>
         <div class="ready-bar"><i></i></div>
       </div></div>`;
   } else if (ph === 'question') {
     app.innerHTML = `<div class="game">${head(pos)}
       <div class="q-text"><span class="fit">${esc(q.q)}</span></div>
-      <div class="q-mid">
-        <div class="timer" id="timer">${q.time}</div>
-        <button class="btn small ghost skip-btn" id="skip">締め切る ⏭</button>
-        <div class="answered"><span class="n" id="answeredN">${H.answers.size}</span>回答</div>
+      <div class="meta">
+        <span class="secs" id="secs">${q.time}</span>
+        <div class="tbar" id="tbar"><i></i></div>
+        <span class="done" id="done"></span>
+        <button class="btn quiet small" id="skip">締め切る</button>
       </div>
       ${q.type === 'text'
-        ? `<div class="text-panel"><span class="big">✏️</span>手元の端末に答えを入力しよう</div>`
+        ? `<div class="text-panel"><span class="pen">✎</span>手元の端末に答えを入力しよう</div>`
         : ansGridHtml(q, 'question')}
       </div>`;
+    updateDone();
     $('#skip').onclick = endQuestion;
   } else if (ph === 'reveal') {
-    const last = H.idx === H.order.length - 1;
-    const nextBtn = `<button class="btn go" id="next">${last ? '結果発表へ ▶' : 'ランキング ▶'}</button>`;
+    const nextBtn = `<button class="btn primary" id="next">${last ? '結果発表へ' : 'ランキングへ'} →</button>`;
     if (q.type === 'text') {
-      // 同じ答え（表記ゆれを含む）をまとめて、多い順に表示
+      // 同じ答え（表記ゆれを含む）をまとめて、正解→多い順に表示
       const groups = new Map();
       for (const a of H.answers.values()) {
         const n = normAnswer(a.s);
@@ -1054,11 +1107,11 @@ function renderHost() {
       const list = [...groups.values()].map(g => ({ ...g, ok: !H.survey && q.answers.some(x => normAnswer(x) === g.n) }))
         .sort((a, b) => (b.ok - a.ok) || (b.count - a.count));
       app.innerHTML = `<div class="game">${head(pos)}
-        <div class="q-text" style="flex-basis:18vh"><span class="fit">${esc(q.q)}</span></div>
-        <div class="accept ${H.survey ? 'survey' : ''}">${H.survey ? 'みんなの答え' : (q.answers.length ? '正解：' + esc(q.answers.join(' ／ ')) : '正解なし')}</div>
+        <div class="q-text" style="flex-basis:17vh"><span class="fit">${esc(q.q)}</span></div>
+        <div class="accept ${H.survey ? 'survey' : ''}">${H.survey ? `みんなの答え（${H.answers.size}人）` : (q.answers.length ? '正解　' + esc(q.answers.join(' ／ ')) : '正解なし')}</div>
         <div class="groups" id="groups">${list.map((g, k) => `
-          <button class="grp ${g.ok ? 'ok' : ''}" data-k="${k}" ${H.survey ? 'disabled' : ''}>${g.ok ? '<span class="ck">✔</span>' : ''}<span>${esc(g.raw)}</span><span class="cnt">${g.count}</span></button>`).join('') || '<div class="mid-msg">回答はありませんでした</div>'}</div>
-        <div class="next-row"><span class="hint">${H.survey ? '' : '答えをタップすると、正解／不正解を切り替えられます'}</span>${nextBtn}</div>
+          <button class="grp ${g.ok ? 'ok' : ''}" data-k="${k}" ${H.survey ? 'disabled' : ''}>${g.ok ? '✓' : ''}<span>${esc(g.raw)}</span><span class="cnt">${g.count}</span></button>`).join('') || '<div class="hint">回答はありませんでした</div>'}</div>
+        <div class="foot-row"><span class="hint" style="flex:1">${H.survey ? '' : '答えをタップすると、正解・不正解を切り替えられます'}</span>${nextBtn}</div>
       </div>`;
       if (!H.survey) $('#groups').onclick = e => {
         const b = e.target.closest('.grp'); if (!b) return;
@@ -1066,46 +1119,42 @@ function renderHost() {
         toggleTextGroup(g.n, g.raw);
       };
     } else {
-      const counts = [0, 0, 0, 0];
-      for (const a of H.answers.values()) counts[a.c]++;
-      const max = Math.max(1, ...counts);
-      const views = q.type === 'tf' ? TF.map((t, j) => ({ j, color: t.color, icon: t.glyph })) : availIdx(q).map(j => ({ j, color: COLORS[j], icon: shape(j) }));
+      const okN = [...H.players.values()].filter(p => p.lastCorrect).length;
       app.innerHTML = `<div class="game">${head(pos)}
-        <div class="q-text" style="flex-basis:18vh"><span class="fit">${esc(q.q)}</span></div>
-        <div class="dist">${views.map(v => `
-          <div class="col ${v.j !== q.correct ? 'dim' : ''}" style="--c:${v.color}">
-            <div class="bar" style="height:${Math.round(counts[v.j] / max * 13)}vh"></div>
-            <div class="lab">${v.icon} ${counts[v.j]}${v.j === q.correct ? ' ✔' : ''}</div>
-          </div>`).join('')}</div>
-        <div class="next-row">${nextBtn}</div>
+        <div class="q-text"><span class="fit">${esc(q.q)}</span></div>
+        <div class="meta">
+          <span class="verdict">正解 <span class="chip" style="font-size:1em">${q.type === 'tf' ? TF[q.correct].glyph : key(q.correct) + esc(q.choices[q.correct])}</span></span>
+          <span class="done"><b>${okN}</b> / ${H.players.size} 人が正解</span>
+          ${nextBtn}
+        </div>
         ${ansGridHtml(q, 'reveal')}</div>`;
     }
     $('#next').onclick = last ? showFinal : showBoard;
   } else if (ph === 'board') {
     const top = ranking().slice(0, 5);
-    app.innerHTML = `<div class="game">${head(pos)}
+    app.innerHTML = `<div class="game">${head(pos, false)}
       <div class="board">
         <h2>ランキング</h2>
         <div class="rank-list">${top.map((p, i) => `
-          <div class="rank-item" style="animation-delay:${i * .08}s"><span class="r">${p.rank}</span><span class="ic">${p.icon}</span><span class="nm">${esc(p.name)}</span>
-          ${p.lastPts ? `<span class="plus">+${p.lastPts}</span>` : ''}<span>${p.score}</span></div>`).join('') || '<p>参加者がいません</p>'}</div>
+          <div class="rank-item ${p.rank === 1 ? 'top' : ''}"><span class="r">${p.rank}</span><span class="ic">${p.icon}</span><span class="nm">${esc(p.name)}</span>
+          ${p.lastPts ? `<span class="plus">+${p.lastPts}</span>` : ''}<span class="sc">${p.score}</span></div>`).join('') || '<p class="hint">参加者がいません</p>'}</div>
       </div>
-      <div class="next-row"><button class="btn go" id="next">次の問題 ▶</button></div></div>`;
+      <div class="foot-row"><button class="btn primary" id="next">次の問題へ →</button></div></div>`;
     $('#next').onclick = nextQuestion;
   } else if (ph === 'final') {
     const arr = ranking();
-    const pod = (p, cls, label) => p ? `<div class="pod ${cls}"><div class="ic">${p.icon}</div><div class="nm">${esc(p.name)}</div><div class="sc">${p.score}点</div><div class="block">${label}</div></div>` : `<div class="pod ${cls}"></div>`;
+    const pod = (p, cls) => p ? `<div class="pod ${cls}"><div class="ic">${p.icon}</div><div class="nm">${esc(p.name)}</div><div class="sc">${p.score}点</div><div class="block">${p.rank}</div></div>` : `<div class="pod ${cls}"></div>`;
     const n = gradedCount();
-    app.innerHTML = `<div class="game">${head('結果発表')}
+    app.innerHTML = `<div class="game">${head('結果発表', false)}
       <div class="board">
         <h2>${esc(H.set.title)}</h2>
-        <div class="podium">${pod(arr[1], 'p2', arr[1] ? arr[1].rank : '2')}${pod(arr[0], 'p1', '1')}${pod(arr[2], 'p3', arr[2] ? arr[2].rank : '3')}</div>
+        <div class="podium">${pod(arr[1], 'p2')}${pod(arr[0], 'p1')}${pod(arr[2], 'p3')}</div>
         <table class="final-table"><tr><th>順位</th><th>名前</th><th>得点</th><th>正解数</th></tr>
           ${arr.map(p => `<tr><td>${p.rank}</td><td>${p.icon} ${esc(p.name)}</td><td>${p.score}</td><td>${p.correctCount} / ${n}</td></tr>`).join('')}</table>
-        <div class="row-btns" style="margin-bottom:20px">
+        <div class="row-btns" style="margin-bottom:20px;justify-content:center">
           <button class="btn" id="csvOut">結果をCSVで保存</button>
           <button class="btn primary" id="again">同じメンバーでもう一度</button>
-          <button class="btn danger" id="quit">終了する</button>
+          <button class="btn quiet danger" id="quit">終了する</button>
         </div>
       </div></div>`;
     $('#csvOut').onclick = downloadResults;
@@ -1120,49 +1169,48 @@ function renderHost() {
   updateStatus();
   fitHost();
 }
- 
+
 function toggleFs() {
   try {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
     else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-  } catch (e) { toast('この端末では全画面にできません（iPadは「ホーム画面に追加」から開くと全画面になります）', 3500); }
+  } catch (e) { toast('この端末では全画面にできません。iPadは共有メニューの「ホーム画面に追加」から開くと全画面になります', 4000); }
 }
- 
+
 function renderLobby() {
   const ready = H.status === 'ready';
   const url = ready ? joinUrl() : '';
   const isFile = location.protocol === 'file:';
   app.innerHTML = `
   <div class="lobby">
-    <div class="lobby-head">
-      <button class="btn small ghost" id="lobbyBack">← 戻る</button>
+    <div class="bar-top">
+      <button class="btn quiet small" id="lobbyBack">← 戻る</button>
+      ${logo()}
       <span class="ttl">${esc(H.set.title)}（${H.set.questions.length}問）</span>
       <span id="peerStatus"></span>
-      <button class="btn small ghost" id="fs">⛶ 全画面</button>
+      <button class="btn quiet small" id="fs">全画面</button>
     </div>
     <div class="join-panel">
       <div>
         <div class="lbl">参加用PIN</div>
-        <div class="pin">${ready ? H.pin.replace(/(\d{3})(\d{3})/, '$1 $2') : '------'}</div>
+        <div class="pin">${ready ? H.pin.replace(/(\d{3})(\d{3})/, '$1 $2') : '--- ---'}</div>
         ${ready && !isFile ? `<div class="join-url">${esc(url)}</div>` : ''}
       </div>
       ${ready && !isFile ? `<div class="qr">${qrHtml(url)}</div>` : ''}
     </div>
-    ${isFile ? `<div class="warn-box">このファイルをPCで直接開いているため、生徒用のURLとQRコードは表示していません。GitHub Pagesなどで公開したページから開くと、URLとQRコードが出ます。（PINでの参加は、生徒が同じページを開けば可能です）</div>` : ''}
-    <div class="lobby-body">
-      <div class="lobby-bar">
-        <span class="count"><span id="pcount">0</span>人</span>
-        <div class="opts">
-          <label><input type="checkbox" id="optShuffle" ${H.opts.shuffleQ ? 'checked' : ''}>問題の順番をシャッフル</label>
-          <label><input type="checkbox" id="optShow" ${H.opts.showOnDevice ? 'checked' : ''}>生徒の端末にも問題と選択肢を表示</label>
-          <label><input type="checkbox" id="optSound" ${H.opts.sound ? 'checked' : ''}>効果音</label>
-        </div>
-        <button class="btn go" id="start" style="font-size:22px">スタート ▶</button>
+    ${isFile ? `<div class="warn-box">このファイルをPCで直接開いているため、生徒用のURLとQRコードは出していません。GitHub Pagesなどで公開したページから開くと表示されます。（生徒が同じページを開けば、PINで参加はできます）</div>` : ''}
+    <div class="lobby-bar">
+      <span class="count"><span id="pcount">0</span><small>人</small></span>
+      <div class="opts">
+        <label><input type="checkbox" id="optShuffle" ${H.opts.shuffleQ ? 'checked' : ''}>問題をシャッフル</label>
+        <label><input type="checkbox" id="optShow" ${H.opts.showOnDevice ? 'checked' : ''}>生徒の端末にも問題文を出す</label>
+        <label><input type="checkbox" id="optSound" ${H.opts.sound ? 'checked' : ''}>効果音</label>
       </div>
-      <div class="players" id="players"></div>
-      <div class="waiting-msg" id="waitMsg">生徒の参加を待っています…<br><small>名前をタップすると退出させられます</small></div>
+      <button class="btn primary big" id="start">スタート →</button>
     </div>
+    <div class="players" id="players"></div>
+    <div class="waiting" id="waitMsg"><div class="dots"><i></i><i></i><i></i></div>生徒の参加を待っています<small>名前をタップすると退出させられます</small></div>
   </div>`;
   $('#lobbyBack').onclick = () => {
     if (H.players.size && !confirm('待機画面を閉じますか？（参加中の生徒の接続は切れます）')) return;
@@ -1186,7 +1234,7 @@ function renderLobby() {
   updateStatus();
   refreshPlayersUi();
 }
- 
+
 function refreshPlayersUi() {
   if (!H || H.phase !== 'lobby') return;
   const box = $('#players'); if (!box) return;
@@ -1196,40 +1244,40 @@ function refreshPlayersUi() {
   $('#start').disabled = !arr.some(p => p.online);
   $('#waitMsg').classList.toggle('hidden', arr.length > 0);
 }
- 
+
 window.addEventListener('beforeunload', e => {
   if (H && H.players.size) { e.preventDefault(); e.returnValue = ''; }
 });
- 
+
 /* ==========================================================
    生徒：参加・回答（子機）
    ========================================================== */
 let P = null; // 生徒側の状態
- 
+
 function getCid() {
   let c = null;
   try { c = sessionStorage.getItem(SS_CID); } catch (e) { }
   if (!c) { c = uid(); try { sessionStorage.setItem(SS_CID, c); } catch (e) { } }
   return c;
 }
- 
+
 function showJoin(pin, errMsg = '') {
-  setStage(true);
   const savedName = store.get(LS_NAME, '');
   let icon = store.get(LS_ICON, '');
   if (!ICONS.includes(icon)) icon = ICONS[Math.floor(Math.random() * ICONS.length)];
   app.innerHTML = `
-  <div class="center-screen">
-    <h1 class="logo" style="font-size:36px;margin-bottom:16px">はやおしクイズ</h1>
-    <form class="join-form" id="jf" autocomplete="off">
-      <input id="pin" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" placeholder="PIN（6けた）" value="${esc(pin)}">
+  <div class="center">
+    <div style="font-size:34px;margin-bottom:18px">${logo()}</div>
+    <form class="join-card" id="jf" autocomplete="off">
+      <div class="lbl">PIN</div>
+      <input id="pin" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" placeholder="6けたの数字" value="${esc(pin)}">
+      <div class="lbl">なまえ と アイコン</div>
       <div class="icon-row"><span class="icon-preview" id="iconPrev">${icon}</span><input id="nm" maxlength="12" placeholder="なまえ" value="${esc(savedName)}"></div>
-      <div class="lbl">アイコンをえらぼう</div>
-      <div class="icon-grid" id="iconGrid">${ICONS.map(ic => `<button type="button" class="${ic === icon ? 'on' : ''}" data-ic="${ic}">${ic}</button>`).join('')}</div>
-      <button class="btn go" type="submit">参加する</button>
+      <div class="icon-grid" id="iconGrid">${ICONS.map(ic => `<button type="button" class="${ic === icon ? 'on' : ''}" data-ic="${ic}" aria-label="アイコン ${ic}">${ic}</button>`).join('')}</div>
+      <button class="btn primary big" type="submit">参加する</button>
       <div class="join-err" id="jerr">${esc(errMsg)}</div>
     </form>
-    ${H ? '' : '<button class="btn small ghost" id="back" style="margin-top:20px">← 戻る</button>'}
+    ${H ? '' : '<button class="btn quiet small" id="back" style="margin-top:16px">← 戻る</button>'}
   </div>`;
   const back = $('#back'); if (back) back.onclick = () => { history.replaceState(null, '', location.pathname); showLanding(); };
   $('#iconGrid').onclick = e => {
@@ -1249,29 +1297,33 @@ function showJoin(pin, errMsg = '') {
     joinGame(p, n, icon);
   };
 }
- 
+
 function plScreen(inner, opts = {}) {
-  app.className = 'stage';
   app.innerHTML = `<div class="pl ${opts.cls || ''}">
     ${inner}
     <div class="pl-foot"><span class="who"><span class="ic">${P ? P.icon : ''}</span>${esc(P ? P.name : '')}</span><span class="sc">${P ? P.score : 0}</span></div>
   </div>`;
 }
-function plMsg(big, mid = '', spinner = false, cls = '') {
-  plScreen(`<div class="pl-main">${spinner ? '<div class="spinner"></div>' : ''}<div class="big-msg">${big}</div>${mid ? `<div class="mid-msg">${mid}</div>` : ''}</div>`, { cls });
+function plMsg(big, mid = '', wait = false, cls = '', top = '') {
+  plScreen(`<div class="pl-main">${top}${wait ? dots : ''}<div class="big-msg">${big}</div>${mid ? `<div class="mid-msg">${mid}</div>` : ''}</div>`, { cls });
 }
- 
+function pickChip(pick) {
+  if (!pick) return '';
+  if (pick.s != null) return `<span class="chip">${esc(pick.s)}</span>`;
+  if (P.curType === 'tf') return `<span class="chip" style="${TF[pick.c].style}"><span style="color:var(--k)">${TF[pick.c].glyph}</span></span>`;
+  return `<span class="chip">${key(pick.c)}</span>`;
+}
+
 function leavePeer() {
   if (!P) return;
   clearTimeout(P.connTimer); clearInterval(P.barTimer);
   const peer = P.peer; P.peer = null; P.conn = null;
   try { peer && peer.destroy(); } catch (e) { }
 }
- 
+
 function joinGame(pin, name, icon) {
   if (P) leavePeer();
-  P = { pin, name, icon, cid: getCid(), peer: null, conn: null, score: P && P.pin === pin ? P.score : 0, ended: false, curI: -1 };
-  setStage(true);
+  P = { pin, name, icon, cid: getCid(), peer: null, conn: null, score: P && P.pin === pin ? P.score : 0, ended: false, curI: -1, curType: 'choice' };
   plMsg('接続中…', '', true);
   if (typeof Peer === 'undefined') { showJoin(pin, '通信ライブラリを読み込めませんでした。インターネット接続を確認してください。'); return; }
   const me = P;
@@ -1288,7 +1340,7 @@ function joinGame(pin, name, icon) {
     const lost = () => {
       if (P !== me || me.ended || !me.conn) return;
       me.conn = null;
-      plScreen(`<div class="pl-main"><div class="big-msg">接続が切れました</div><div class="mid-msg">もう一度つなぎ直してください</div><button class="btn go" id="rejoin" style="font-size:22px">再接続する</button></div>`);
+      plScreen(`<div class="pl-main"><div class="big-msg">接続が切れました</div><div class="mid-msg">もう一度つなぎ直してください</div><button class="btn primary big" id="rejoin">再接続する</button></div>`);
       $('#rejoin').onclick = () => joinGame(me.pin, me.name, me.icon);
     };
     conn.on('close', lost);
@@ -1302,38 +1354,43 @@ function joinGame(pin, name, icon) {
     }
   });
 }
- 
+
 function onPlayerData(d) {
   if (!d || typeof d !== 'object') return;
   clearInterval(P.barTimer);
+  if (d.type) P.curType = d.type;
   switch (d.t) {
     case 'welcome':
       P.name = d.name; P.icon = d.icon || P.icon; P.title = d.title;
       break;
     case 'lobby':
       P.score = 0;
-      plMsg(`<div class="me-icon">${P.icon}</div>参加しました！`, `先生の画面に<br><b>${esc(P.name)}</b><br>が出ているか確認してね<br><small>まもなく始まります</small>`);
+      plMsg('参加しました', `先生の画面に名前が出ているか確認してね<br>まもなく始まります`, false, '', `<div class="me-icon">${P.icon}</div><div class="big-msg" style="font-size:26px">${esc(P.name)}</div>`);
       break;
     case 'ready':
-      plMsg(`第${d.i + 1}問`, `${TYPE_LABEL[d.type] || ''}<br>先生の画面を見てね！`, true);
+      plMsg(`Q${d.i + 1}`, `${TYPE_LABEL[d.type] || ''}　先生の画面を見てね`, true);
       break;
     case 'q': renderAnswerPad(d); break;
-    case 'answered': plMsg('回答しました！', 'みんなの回答を待っています…', true); break;
+    case 'answered':
+      plMsg('回答しました', 'みんなの回答を待っています', true, '', pickChip(d.pick));
+      break;
     case 'r': {
       P.score = d.score;
-      const mine = d.mine ? `<div class="your-ans">あなたの答え：${esc(d.mine)}</div>` : '';
-      const ans = d.ans ? `<div class="mid-msg">正解：${esc(d.ans)}</div>` : '';
-      const rank = `<div class="mid-msg">いま ${d.rank}位 / ${d.total}人</div>`;
-      if (d.survey) plScreen(`<div class="pl-main"><div class="res-icon">📝</div><div class="big-msg">${d.answered ? '送信ありがとう！' : '時間切れ…'}</div>${mine}<div class="mid-msg">先生の画面でみんなの答えを見よう</div></div>`);
-      else if (!d.answered) plScreen(`<div class="pl-main"><div class="res-icon">⏰</div><div class="big-msg">時間切れ…</div>${ans}${rank}</div>`, { cls: 'ng' });
-      else if (d.correct) plScreen(`<div class="pl-main"><div class="res-icon">⭕</div><div class="big-msg">正解！</div><div class="pts">+${d.pts}</div>${mine}${rank}</div>`, { cls: 'ok' });
-      else plScreen(`<div class="pl-main"><div class="res-icon">❌</div><div class="big-msg">ざんねん…</div>${mine}${ans}${rank}</div>`, { cls: 'ng' });
+      const mine = d.pick ? `<div class="mid-msg">あなたの答え　${pickChip(d.pick)}</div>` : '';
+      const ans = d.ans ? `<div class="mid-msg">正解　<b style="color:var(--ink)">${esc(d.ans)}</b></div>` : '';
+      const rank = `<div class="mid-msg">いま <b style="color:var(--ink)">${d.rank}位</b> / ${d.total}人</div>`;
+      if (d.survey) plScreen(`<div class="pl-main"><div class="badge-circle" style="${CH[1].style}">✎</div><div class="big-msg">${d.answered ? '送信ありがとう' : '時間切れ'}</div>${mine}<div class="mid-msg">先生の画面でみんなの答えを見よう</div></div>`);
+      else if (!d.answered) plScreen(`<div class="pl-main"><div class="badge-circle" style="--k:#9a978e">–</div><div class="big-msg">時間切れ</div>${ans}${rank}</div>`, { cls: 'ng' });
+      else if (d.correct) plScreen(`<div class="pl-main"><div class="badge-circle" style="--k:var(--ok)">✓</div><div class="big-msg">正解！</div><div class="pts">+${d.pts}</div>${mine}${rank}</div>`, { cls: 'ok' });
+      else plScreen(`<div class="pl-main"><div class="badge-circle" style="--k:var(--ng)">✕</div><div class="big-msg">ざんねん</div>${mine}${ans}${rank}</div>`, { cls: 'ng' });
       break;
     }
-    case 'end':
+    case 'end': {
       P.score = d.score;
-      plScreen(`<div class="pl-main"><div class="mid-msg">結果発表</div><div class="me-icon">${P.icon}</div><div class="big-msg" style="font-size:64px">${d.rank}位</div><div class="mid-msg">${d.total}人中 ／ ${d.score}点<br>正解 ${d.correctCount} / ${d.n}問</div>${d.rank <= 3 ? '<div class="res-icon">🏆</div>' : ''}</div>`);
+      const medal = { 1: '--k:#D9930D', 2: '--k:#8a919e', 3: '--k:#C0773A' }[d.rank] || '--k:var(--brand)';
+      plScreen(`<div class="pl-main"><div class="mid-msg">結果発表</div><div class="badge-circle" style="${medal};font-size:52px">${d.rank}<small style="font-size:.4em">位</small></div><div class="big-msg">${P.icon} ${esc(P.name)}</div><div class="mid-msg">${d.total}人中 ${d.rank}位　${d.score}点<br>正解 ${d.correctCount} / ${d.n}問</div></div>`);
       break;
+    }
     case 'kick':
       P.ended = true; leavePeer();
       plMsg('退出しました', '先生によって退出になりました');
@@ -1348,27 +1405,27 @@ function onPlayerData(d) {
       break;
   }
 }
- 
+
 function renderAnswerPad(d) {
   P.curI = d.i;
-  const head = d.text ? `<div class="pl-qtext">${esc(d.text)}</div>` : `<div class="mid-msg" style="text-align:center">第${d.i + 1}問 / ${d.n}</div>`;
+  const head = `<div class="pl-qhead"><span>Q${d.i + 1} / ${d.n}</span><div class="pl-timebar"><i id="bar"></i></div></div>${d.text ? `<div class="pl-qtext">${esc(d.text)}</div>` : ''}`;
   let body;
   if (d.type === 'text') {
     body = `<form class="pl-textform" id="tf" autocomplete="off">
       <div class="lead">${d.survey ? '思ったことを書いてね' : '答えを入力してね'}</div>
       <input id="tans" maxlength="${TEXT_MAX}" placeholder="ここに入力" enterkeyhint="send">
-      <button class="btn go" type="submit">送信 ▶</button>
+      <button class="btn primary" type="submit">送信する</button>
     </form>`;
   } else if (d.type === 'tf') {
-    body = `<div class="pl-grid" style="grid-template-rows:1fr">${TF.map((t, j) => `<button class="pl-btn" data-c="${j}" style="--c:${t.color}"><span class="tfglyph">${t.glyph}</span></button>`).join('')}</div>`;
+    body = `<div class="pl-grid" style="grid-template-rows:1fr">${TF.map((t, j) => `<button class="pl-btn" data-c="${j}" style="${t.style}"><span class="big" style="font-size:96px">${t.glyph}</span></button>`).join('')}</div>`;
   } else {
     const withText = Array.isArray(d.choices);
     body = `<div class="pl-grid">${[0, 1, 2, 3].map(j => {
       const ok = d.avail.includes(j);
-      return `<button class="pl-btn ${ok ? '' : 'blank'} ${withText ? 'with-text' : ''}" data-c="${j}" style="--c:${COLORS[j]}" ${ok ? '' : 'disabled'}>${shape(j)}${withText ? `<span>${esc(d.choices[j])}</span>` : ''}</button>`;
+      return `<button class="pl-btn ${ok ? '' : 'blank'} ${withText ? 'with-text' : ''}" data-c="${j}" style="${CH[j].style}" ${ok ? '' : 'disabled'}><span class="big">${CH[j].L}</span>${withText ? `<span>${esc(d.choices[j])}</span>` : ''}</button>`;
     }).join('')}</div>`;
   }
-  plScreen(`<div class="pl-q">${head}<div class="pl-timebar"><i id="bar"></i></div>${body}</div>`);
+  plScreen(`<div class="pl-q">${head}${body}</div>`);
   const total = d.time * 1000, endAt = performance.now() + d.remain;
   const bar = $('#bar');
   P.barTimer = setInterval(() => {
@@ -1380,7 +1437,7 @@ function renderAnswerPad(d) {
     if (!P.conn) return;
     clearInterval(P.barTimer);
     send(P.conn, Object.assign({ t: 'a', i: d.i }, payload));
-    plMsg('回答しました！', 'みんなの回答を待っています…', true);
+    plMsg('回答しました', 'みんなの回答を待っています', true, '', pickChip(payload));
   };
   if (d.type === 'text') {
     const inp = $('#tans');
@@ -1399,7 +1456,7 @@ function renderAnswerPad(d) {
     $$('.pl-btn').forEach(b => b.onclick = () => submit({ c: Number(b.dataset.c) }));
   }
 }
- 
+
 /* ==========================================================
    起動
    ========================================================== */
@@ -1411,4 +1468,3 @@ function renderAnswerPad(d) {
 </script>
 </body>
 </html>
- 
